@@ -61,7 +61,9 @@ export function MediaDeviceSettings() {
             {microphoneDevices.map((d) => (
               <DropdownMenu.Item
                 key={d.deviceId}
-                onClick={() => setActiveMicrophoneDevice(d.deviceId)}
+                onClick={() =>
+                  void setActiveMicrophoneDevice(d.deviceId, { exact: true })
+                }
                 className={cn(
                   d.deviceId === activeMicrophoneDeviceId && "text-accent-11"
                 )}
@@ -90,7 +92,9 @@ export function MediaDeviceSettings() {
             {cameraDevices.map((d) => (
               <DropdownMenu.Item
                 key={d.deviceId}
-                onClick={() => setActiveCameraDevice(d.deviceId)}
+                onClick={() =>
+                  void setActiveCameraDevice(d.deviceId, { exact: true })
+                }
                 className={cn(
                   d.deviceId === activeCameraDeviceId && "text-accent-11"
                 )}
