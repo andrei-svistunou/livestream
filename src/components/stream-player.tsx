@@ -401,13 +401,15 @@ export function StreamPlayer({ isHost = false }) {
                   </Button>
                 )}
                 {isHost &&
-                  roomMetadata?.creator_identity === localParticipant.identity && (
+                  roomMetadata?.creator_identity ===
+                    localParticipant.identity && (
                     <Button
                       size="1"
                       color="red"
                       variant="soft"
                       disabled={
-                        roomState !== ConnectionState.Connected || stoppingStream
+                        roomState !== ConnectionState.Connected ||
+                        stoppingStream
                       }
                       onClick={onStopStream}
                     >
