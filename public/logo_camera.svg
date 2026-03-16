@@ -1,0 +1,29 @@
+<svg width="220" height="220" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+
+<!-- Outer frame -->
+<rect x="30" y="30" width="160" height="160" rx="40"
+stroke="#6A5CFF" stroke-width="8" fill="none"/>
+
+<!-- Inner frame -->
+<rect x="55" y="55" width="110" height="110" rx="25"
+stroke="#00E0FF" stroke-width="6" fill="none"/>
+
+<!-- Camera body -->
+<rect x="75" y="95" width="50" height="30" rx="6"
+fill="#6A5CFF"/>
+
+<!-- Camera lens -->
+<circle cx="100" cy="110" r="7" fill="white"/>
+
+<!-- Camera top -->
+<rect x="90" y="85" width="20" height="10" rx="3"
+fill="#6A5CFF"/>
+
+<!-- Live streaming signal -->
+<path d="M135 95 Q155 110 135 125"
+stroke="#00E0FF" stroke-width="3" fill="none"/>
+
+<path d="M140 90 Q165 110 140 130"
+stroke="#00E0FF" stroke-width="3" fill="none"/>
+
+</svg>

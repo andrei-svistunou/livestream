@@ -22,30 +22,30 @@ export function ReactionBar() {
       gap="2"
       justify="center"
       align="center"
-      className="border-t border-accent-5 bg-accent-3 h-[100px] text-center"
+      className="border-t border-accent-5 bg-accent-3 h-[60px] sm:h-[80px] text-center px-2"
     >
       <Tooltip content="Fire" delayDuration={0}>
-        <Button size="4" variant="outline" onClick={() => onSend("🔥")}>
+        <Button size="3" variant="outline" onClick={() => onSend("🔥")}>
           🔥
         </Button>
       </Tooltip>
       <Tooltip content="Applause">
-        <Button size="4" variant="outline" onClick={() => onSend("👏")}>
+        <Button size="3" variant="outline" onClick={() => onSend("👏")}>
           👏
         </Button>
       </Tooltip>
       <Tooltip content="LOL">
-        <Button size="4" variant="outline" onClick={() => onSend("🤣")}>
+        <Button size="3" variant="outline" onClick={() => onSend("🤣")}>
           🤣
         </Button>
       </Tooltip>
       <Tooltip content="Love">
-        <Button size="4" variant="outline" onClick={() => onSend("❤️")}>
+        <Button size="3" variant="outline" onClick={() => onSend("❤️")}>
           ❤️
         </Button>
       </Tooltip>
       <Tooltip content="Confetti">
-        <Button size="4" variant="outline" onClick={() => onSend("🎉")}>
+        <Button size="3" variant="outline" onClick={() => onSend("🎉")}>
           🎉
         </Button>
       </Tooltip>

@@ -3,3 +3,17 @@
 
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* Apple-like rounded corners for Radix Themes Button only */
+  .rt-Button {
+    @apply rounded-xl;
+  }
+}
+
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a[href],
+.cursor-pointer {
+  cursor: pointer;
+}

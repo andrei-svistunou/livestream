@@ -16,16 +16,26 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 function ChatMessage({ message }: { message: ReceivedChatMessage }) {
   const { localParticipant } = useLocalParticipant();
 
+  const avatarEmoji = useMemo(() => {
+    try {
+      const metadata = message.from?.metadata;
+      if (!metadata) return undefined;
+      return (JSON.parse(metadata) as { avatar_emoji?: string }).avatar_emoji;
+    } catch {
+      return undefined;
+    }
+  }, [message.from?.metadata]);
+
   return (
-    <Flex gap="2" align="start" className="break-words w-[220px]">
+    <Flex gap="2" align="start" className="break-words max-w-full">
       <Avatar
         size="1"
-        fallback={message.from?.identity[0] ?? <PersonIcon />}
+        fallback={avatarEmoji ?? message.from?.identity[0] ?? <PersonIcon />}
         radius="full"
       />
       <Flex direction="column">
@@ -46,10 +56,11 @@ function ChatMessage({ message }: { message: ReceivedChatMessage }) {
   );
 }
 
-export function Chat() {
+export function Chat({ onNewMessage }: { onNewMessage?: () => void }) {
   const [draft, setDraft] = useState("");
   const { chatMessages, send } = useChat();
   const { metadata } = useRoomInfo();
+  const prevCountRef = useRef(0);
 
   const { enable_chat: chatEnabled } = (
     metadata ? JSON.parse(metadata) : {}
@@ -59,11 +70,18 @@ export function Chat() {
   const messages = useMemo(() => {
     const timestamps = chatMessages.map((msg) => msg.timestamp);
     const filtered = chatMessages.filter(
-      (msg, i) => !timestamps.includes(msg.timestamp, i + 1)
+      (msg, i) => !timestamps.includes(msg.timestamp, i + 1),
     );
 
     return filtered;
   }, [chatMessages]);
+
+  useEffect(() => {
+    if (messages.length > prevCountRef.current && prevCountRef.current > 0) {
+      onNewMessage?.();
+    }
+    prevCountRef.current = messages.length;
+  }, [messages.length, onNewMessage]);
 
   const onSend = async () => {
     if (draft.trim().length && send) {

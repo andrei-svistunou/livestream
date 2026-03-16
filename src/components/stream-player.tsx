@@ -11,7 +11,12 @@ import {
   useRoomContext,
   useTracks,
 } from "@livekit/components-react";
-import { CopyIcon, EyeClosedIcon, EyeOpenIcon } from "@radix-ui/react-icons";
+import {
+  CopyIcon,
+  ExitIcon,
+  EyeClosedIcon,
+  EyeOpenIcon,
+} from "@radix-ui/react-icons";
 import { Avatar, Badge, Button, Flex, Grid, Text } from "@radix-ui/themes";
 import Confetti from "js-confetti";
 import {
@@ -33,7 +38,7 @@ function clampNumber(value: number, min: number, max: number) {
 }
 
 function createZoomVideoProcessor(
-  zoomRef: MutableRefObject<number>
+  zoomRef: MutableRefObject<number>,
 ): TrackProcessor<Track.Kind> {
   let videoEl: HTMLVideoElement | undefined;
   let canvasEl: HTMLCanvasElement | undefined;
@@ -114,7 +119,7 @@ function createZoomVideoProcessor(
       ctx = canvasEl.getContext("2d");
       if (!ctx) {
         throw new Error(
-          "Unable to create 2D canvas context for zoom processor"
+          "Unable to create 2D canvas context for zoom processor",
         );
       }
 
@@ -173,6 +178,8 @@ export function StreamPlayer({ isHost = false }) {
 
   const [cameraZoom, setCameraZoom] = useState(1);
   const cameraZoomRef = useRef(1);
+  const streamAreaRef = useRef<HTMLDivElement>(null);
+  const [pipActive, setPipActive] = useState(false);
 
   useEffect(() => {
     cameraZoomRef.current = cameraZoom;
@@ -184,6 +191,8 @@ export function StreamPlayer({ isHost = false }) {
   const { localParticipant } = useLocalParticipant();
   const localMetadata = (localParticipant.metadata &&
     JSON.parse(localParticipant.metadata)) as ParticipantMetadata;
+  const localAvatarFallback =
+    localMetadata?.avatar_emoji ?? localParticipant.identity[0] ?? "?";
   const canHost =
     isHost || (localMetadata?.invited_to_stage && localMetadata?.hand_raised);
   const participants = useParticipants();
@@ -220,15 +229,15 @@ export function StreamPlayer({ isHost = false }) {
   }, [activeCameraDeviceId, canHost, localParticipant]);
 
   const localCameraTrack = useTracks([Track.Source.Camera]).find(
-    (t) => t.participant.identity === localParticipant.identity
+    (t) => t.participant.identity === localParticipant.identity,
   );
 
   const remoteVideoTracks = useTracks([Track.Source.Camera]).filter(
-    (t) => t.participant.identity !== localParticipant.identity
+    (t) => t.participant.identity !== localParticipant.identity,
   );
 
   const remoteAudioTracks = useTracks([Track.Source.Microphone]).filter(
-    (t) => t.participant.identity !== localParticipant.identity
+    (t) => t.participant.identity !== localParticipant.identity,
   );
 
   const authToken = useAuthToken();
@@ -270,8 +279,37 @@ export function StreamPlayer({ isHost = false }) {
     });
   };
 
+  const onExitStream = () => {
+    room.disconnect();
+    router.push("/");
+  };
+
+  const togglePiP = async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setPipActive(false);
+      } else if (streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        // Prefer the last video (usually the remote/main stream)
+        const video = videos[videos.length - 1] || videos[0];
+        if (video && document.pictureInPictureEnabled) {
+          await video.requestPictureInPicture();
+          setPipActive(true);
+          video.addEventListener(
+            "leavepictureinpicture",
+            () => setPipActive(false),
+            { once: true },
+          );
+        }
+      }
+    } catch {
+      // PiP might not be supported
+    }
+  };
+
   return (
-    <div className="relative h-full w-full bg-black">
+    <div ref={streamAreaRef} className="relative h-full w-full bg-black">
       <Grid className="w-full h-full absolute" gap="2">
         {canHost && (
           <div className="relative">
@@ -282,7 +320,8 @@ export function StreamPlayer({ isHost = false }) {
             >
               <Avatar
                 size="9"
-                fallback={localParticipant.identity[0] ?? "?"}
+                src={localMetadata?.avatar_image}
+                fallback={localAvatarFallback}
                 radius="full"
               />
             </Flex>
@@ -310,11 +349,28 @@ export function StreamPlayer({ isHost = false }) {
               align="center"
               justify="center"
             >
-              <Avatar
-                size="9"
-                fallback={t.participant.identity[0] ?? "?"}
-                radius="full"
-              />
+              {(() => {
+                let remoteMeta: ParticipantMetadata | undefined;
+                try {
+                  remoteMeta = (t.participant.metadata &&
+                    JSON.parse(t.participant.metadata)) as ParticipantMetadata;
+                } catch {
+                  remoteMeta = undefined;
+                }
+
+                return (
+                  <Avatar
+                    size="9"
+                    src={remoteMeta?.avatar_image}
+                    fallback={
+                      remoteMeta?.avatar_emoji ??
+                      t.participant.identity[0] ??
+                      "?"
+                    }
+                    radius="full"
+                  />
+                );
+              })()}
             </Flex>
             <VideoTrack
               trackRef={t}
@@ -341,14 +397,15 @@ export function StreamPlayer({ isHost = false }) {
         className="absolute top-0 h-full w-full bg-gray-2-translucent text-white"
       />
       <div className="absolute top-0 w-full p-2">
-        <Flex justify="between" align="end">
-          <Flex gap="2" justify="center" align="center">
+        <Flex justify="between" align="start" wrap="wrap" gap="2">
+          <Flex gap="2" justify="center" align="center" wrap="wrap">
             <Button
               size="1"
               variant="soft"
+              className="cursor-pointer"
               disabled={!Boolean(roomName)}
               onClick={() =>
-                copy(`${process.env.NEXT_PUBLIC_SITE_URL}/watch/${roomName}`)
+                copy(`${window.location.origin}/watch/${roomName}`)
               }
             >
               {roomState === ConnectionState.Connected ? (
@@ -368,7 +425,7 @@ export function StreamPlayer({ isHost = false }) {
                     variant="soft"
                     onClick={() =>
                       setCameraZoom(
-                        (z) => Math.round(clampNumber(z - 0.1, 1, 3) * 10) / 10
+                        (z) => Math.round(clampNumber(z - 0.1, 1, 3) * 10) / 10,
                       )
                     }
                     disabled={cameraZoom <= 1}
@@ -386,7 +443,7 @@ export function StreamPlayer({ isHost = false }) {
                     variant="soft"
                     onClick={() =>
                       setCameraZoom(
-                        (z) => Math.round(clampNumber(z + 0.1, 1, 3) * 10) / 10
+                        (z) => Math.round(clampNumber(z + 0.1, 1, 3) * 10) / 10,
                       )
                     }
                     disabled={cameraZoom >= 3}
@@ -419,7 +476,7 @@ export function StreamPlayer({ isHost = false }) {
               </Flex>
             )}
           </Flex>
-          <Flex gap="2">
+          <Flex gap="2" align="center" wrap="wrap">
             {roomState === ConnectionState.Connected && (
               <Flex gap="1" align="center">
                 <div className="rounded-6 bg-red-9 w-2 h-2 animate-pulse" />
@@ -452,6 +509,25 @@ export function StreamPlayer({ isHost = false }) {
                 </Button>
               </div>
             </PresenceDialog>
+            {document.pictureInPictureEnabled && (
+              <Button
+                size="1"
+                variant={pipActive ? "solid" : "soft"}
+                onClick={togglePiP}
+              >
+                PiP
+              </Button>
+            )}
+            {!isHost && (
+              <Button
+                size="1"
+                color="red"
+                variant="soft"
+                onClick={onExitStream}
+              >
+                <ExitIcon /> Exit
+              </Button>
+            )}
           </Flex>
         </Flex>
       </div>

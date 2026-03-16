@@ -28,8 +28,20 @@ function ParticipantListItem({
   isHost?: boolean;
 }) {
   const authToken = useAuthToken();
-  const participantMetadata = (participant.metadata &&
-    JSON.parse(participant.metadata)) as ParticipantMetadata;
+  const participantMetadata: ParticipantMetadata = (() => {
+    try {
+      if (participant.metadata) {
+        return JSON.parse(participant.metadata) as ParticipantMetadata;
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      hand_raised: false,
+      invited_to_stage: false,
+      avatar_image: `https://api.multiavatar.com/${participant.identity}.png`,
+    };
+  })();
   const room = useRoomContext();
   const roomMetadata = (room.metadata &&
     JSON.parse(room.metadata)) as RoomMetadata;
@@ -163,7 +175,11 @@ function ParticipantListItem({
       <Flex align="center" gap="2">
         <Avatar
           size="1"
-          fallback={participant.identity[0] ?? <PersonIcon />}
+          src={participantMetadata?.avatar_image}
+          fallback={
+            participantMetadata?.avatar_emoji ??
+            participant.identity[0] ?? <PersonIcon />
+          }
           radius="full"
         />
         <Text className={isCurrentUser ? "text-accent-11" : ""}>
@@ -190,10 +206,10 @@ export function PresenceDialog({
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
   const hosts = participants.filter(
-    (participant) => participant.permissions?.canPublish ?? false
+    (participant) => participant.permissions?.canPublish ?? false,
   );
   const viewers = participants.filter(
-    (participant) => !(participant.permissions?.canPublish ?? false)
+    (participant) => !(participant.permissions?.canPublish ?? false),
   );
 
   return (

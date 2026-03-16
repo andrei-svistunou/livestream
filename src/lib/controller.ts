@@ -25,6 +25,7 @@ export type ParticipantMetadata = {
   hand_raised: boolean;
   invited_to_stage: boolean;
   avatar_image: string;
+  avatar_emoji?: string;
 };
 
 export type Config = {
@@ -68,6 +69,7 @@ export type CreateStreamResponse = {
 export type JoinStreamParams = {
   room_name: string;
   identity: string;
+  avatar_emoji?: string;
 };
 
 export type JoinStreamResponse = {
@@ -113,8 +115,19 @@ export class Controller {
     this.roomService = new RoomServiceClient(
       httpUrl,
       process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!
+      process.env.LIVEKIT_API_SECRET!,
     );
+  }
+
+  async checkStream(roomName: string): Promise<boolean> {
+    try {
+      const rooms = await this.roomService.listRooms([roomName]);
+      if (rooms.length === 0) return false;
+      const participants = await this.roomService.listParticipants(roomName);
+      return participants.some((p) => p.permission?.canPublish);
+    } catch {
+      return false;
+    }
   }
 
   async createIngress({
@@ -158,7 +171,7 @@ export class Controller {
       ingress_type === "whip"
         ? IngressInput.WHIP_INPUT
         : IngressInput.RTMP_INPUT,
-      options
+      options,
     );
 
     // Create viewer access token
@@ -168,7 +181,7 @@ export class Controller {
       process.env.LIVEKIT_API_SECRET!,
       {
         identity: metadata.creator_identity,
-      }
+      },
     );
 
     at.addGrant({
@@ -179,9 +192,15 @@ export class Controller {
       canPublishData: true,
     });
 
+    at.metadata = JSON.stringify({
+      hand_raised: false,
+      invited_to_stage: false,
+      avatar_image: `https://api.multiavatar.com/${metadata.creator_identity}.png`,
+    } satisfies ParticipantMetadata);
+
     const authToken = this.createAuthToken(
       room_name,
-      metadata.creator_identity
+      metadata.creator_identity,
     );
 
     return {
@@ -203,7 +222,7 @@ export class Controller {
       process.env.LIVEKIT_API_SECRET!,
       {
         identity: metadata.creator_identity,
-      }
+      },
     );
 
     if (!roomName) {
@@ -215,6 +234,12 @@ export class Controller {
       canPublish: true,
       canSubscribe: true,
     });
+
+    at.metadata = JSON.stringify({
+      hand_raised: false,
+      invited_to_stage: false,
+      avatar_image: `https://api.multiavatar.com/${metadata.creator_identity}.png`,
+    } satisfies ParticipantMetadata);
 
     // TODO turn off auto creation in the dashboard
     await this.roomService.createRoom({
@@ -256,6 +281,7 @@ export class Controller {
   async joinStream({
     identity,
     room_name,
+    avatar_emoji,
   }: JoinStreamParams): Promise<JoinStreamResponse> {
     // Check for existing participant with same identity
     let exists = false;
@@ -273,8 +299,17 @@ export class Controller {
       process.env.LIVEKIT_API_SECRET!,
       {
         identity,
-      }
+      },
     );
+
+    // Store viewer profile data in LiveKit participant metadata
+    const participantMetadata: ParticipantMetadata = {
+      hand_raised: false,
+      invited_to_stage: false,
+      avatar_image: `https://api.multiavatar.com/${identity}.png`,
+      avatar_emoji,
+    };
+    at.metadata = JSON.stringify(participantMetadata);
 
     at.addGrant({
       room: room_name,
@@ -312,7 +347,7 @@ export class Controller {
 
     const participant = await this.roomService.getParticipant(
       session.room_name,
-      identity
+      identity,
     );
     const permission = participant.permission || ({} as ParticipantPermission);
 
@@ -328,7 +363,7 @@ export class Controller {
       session.room_name,
       identity,
       JSON.stringify(metadata),
-      permission
+      permission,
     );
   }
 
@@ -353,13 +388,13 @@ export class Controller {
       identity !== session.identity
     ) {
       throw new Error(
-        "Only the creator or the participant him self can remove from stage"
+        "Only the creator or the participant him self can remove from stage",
       );
     }
 
     const participant = await this.roomService.getParticipant(
       session.room_name,
-      session.identity
+      session.identity,
     );
 
     const permission = participant.permission || ({} as ParticipantPermission);
@@ -374,14 +409,14 @@ export class Controller {
       session.room_name,
       identity,
       JSON.stringify(metadata),
-      permission
+      permission,
     );
   }
 
   async raiseHand(session: Session) {
     const participant = await this.roomService.getParticipant(
       session.room_name,
-      session.identity
+      session.identity,
     );
 
     const permission = participant.permission || ({} as ParticipantPermission);
@@ -397,12 +432,12 @@ export class Controller {
       session.room_name,
       session.identity,
       JSON.stringify(metadata),
-      permission
+      permission,
     );
   }
 
   getOrCreateParticipantMetadata(
-    participant: ParticipantInfo
+    participant: ParticipantInfo,
   ): ParticipantMetadata {
     if (participant.metadata) {
       return JSON.parse(participant.metadata) as ParticipantMetadata;
@@ -416,7 +451,7 @@ export class Controller {
   createAuthToken(room_name: string, identity: string) {
     return jwt.sign(
       JSON.stringify({ room_name, identity }),
-      process.env.LIVEKIT_API_SECRET!
+      process.env.LIVEKIT_API_SECRET!,
     );
   }
 }
