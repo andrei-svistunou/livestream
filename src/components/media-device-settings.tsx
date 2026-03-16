@@ -46,14 +46,14 @@ export function MediaDeviceSettings() {
       <Flex>
         <Button
           size="1"
-          variant={micEnabled ? "soft" : "surface"}
+          variant={micEnabled ? "outline" : "surface"}
           onClick={() => setMicEnabled(!micEnabled)}
         >
           Mic {micEnabled ? "On" : "Off"}
         </Button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger disabled={!micEnabled}>
-            <Button variant="soft" size="1">
+            <Button variant="outline" size="1">
               <CaretDownIcon />
             </Button>
           </DropdownMenu.Trigger>
@@ -65,7 +65,7 @@ export function MediaDeviceSettings() {
                   void setActiveMicrophoneDevice(d.deviceId, { exact: true })
                 }
                 className={cn(
-                  d.deviceId === activeMicrophoneDeviceId && "text-accent-11"
+                  d.deviceId === activeMicrophoneDeviceId && "text-primary",
                 )}
               >
                 {d.label}
@@ -77,14 +77,14 @@ export function MediaDeviceSettings() {
       <Flex>
         <Button
           size="1"
-          variant={camEnabled ? "soft" : "surface"}
+          variant={camEnabled ? "outline" : "surface"}
           onClick={() => setCamEnabled(!camEnabled)}
         >
           Cam {camEnabled ? "On" : "Off"}
         </Button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger disabled={!camEnabled}>
-            <Button variant="soft" size="1">
+            <Button variant="outline" size="1">
               <CaretDownIcon />
             </Button>
           </DropdownMenu.Trigger>
@@ -96,7 +96,7 @@ export function MediaDeviceSettings() {
                   void setActiveCameraDevice(d.deviceId, { exact: true })
                 }
                 className={cn(
-                  d.deviceId === activeCameraDeviceId && "text-accent-11"
+                  d.deviceId === activeCameraDeviceId && "text-primary",
                 )}
               >
                 {d.label}

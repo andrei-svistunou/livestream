@@ -208,6 +208,23 @@ export function StreamPlayer({ isHost = false }) {
     kind: "videoinput",
   });
 
+  const localCameraTrack = useTracks([Track.Source.Camera]).find(
+    (t) => t.participant.identity === localParticipant.identity,
+  );
+
+  const localCameraTrackSid = localCameraTrack?.publication?.trackSid;
+
+  useEffect(() => {
+    // Reset zoom when the selected camera changes so the new camera starts from 1x.
+    setCameraZoom(1);
+  }, [activeCameraDeviceId]);
+
+  useEffect(() => {
+    if (!localParticipant.isCameraEnabled) {
+      setCameraZoom(1);
+    }
+  }, [localParticipant.isCameraEnabled]);
+
   useEffect(() => {
     if (!canHost) return;
 
@@ -226,11 +243,13 @@ export function StreamPlayer({ isHost = false }) {
     return () => {
       void cameraTrack.stopProcessor();
     };
-  }, [activeCameraDeviceId, canHost, localParticipant]);
-
-  const localCameraTrack = useTracks([Track.Source.Camera]).find(
-    (t) => t.participant.identity === localParticipant.identity,
-  );
+  }, [
+    activeCameraDeviceId,
+    canHost,
+    localCameraTrackSid,
+    localParticipant,
+    localParticipant.isCameraEnabled,
+  ]);
 
   const remoteVideoTracks = useTracks([Track.Source.Camera]).filter(
     (t) => t.participant.identity !== localParticipant.identity,
@@ -398,7 +417,15 @@ export function StreamPlayer({ isHost = false }) {
       />
       <div className="absolute top-0 w-full p-2">
         <Flex justify="between" align="start" wrap="wrap" gap="2">
-          <Flex gap="2" justify="center" align="center" wrap="wrap">
+          <Flex
+            gap="2"
+            justify="center"
+            align="center"
+            wrap="wrap"
+            style={{
+              backgroundColor: "#000",
+            }}
+          >
             <Button
               size="1"
               variant="soft"
