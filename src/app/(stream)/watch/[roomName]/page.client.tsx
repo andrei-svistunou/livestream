@@ -1,59 +1,471 @@
 "use client";
 
 import { Chat } from "@/components/chat";
-import { ReactionBar } from "@/components/reaction-bar";
+import { PresencePanel } from "@/components/presence-dialog";
 import { Spinner } from "@/components/spinner";
 import { StreamPlayer } from "@/components/stream-player";
 import { TokenContext } from "@/components/token-context";
-import { JoinStreamResponse } from "@/lib/controller";
 import { cn } from "@/lib/utils";
-import { LiveKitRoom } from "@livekit/components-react";
-import {
-  ArrowRightIcon,
-  ChatBubbleIcon,
-  Cross1Icon,
-  PersonIcon,
-} from "@radix-ui/react-icons";
-import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  Flex,
-  Heading,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { ConnectionState } from "livekit-client";
+import { LiveKitRoom, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { JoinStreamResponse } from "@/lib/controller";
 
-const AVATAR_EMOJIS = [
-  "😀",
-  "😎",
-  "🤠",
-  "🦊",
-  "🐱",
-  "🐶",
-  "🦁",
-  "🐼",
-  "🦄",
-  "🐲",
-  "🤖",
-  "👽",
-  "⚽️",
-  "🥅",
-  "👟",
-  "🧤",
-  "🧦",
-  "🏟️",
-  "🏈",
-  "🏀",
-  "🏐",
-  "🎾",
-  "🏓",
+const AVATARS = [
+  { emoji: "🐙", label: "Octopus" },
+  { emoji: "🎮", label: "Gaming" },
+  { emoji: "🤖", label: "Robot" },
+  { emoji: "⚡", label: "Lightning" },
+  { emoji: "🚀", label: "Rocket" },
+  { emoji: "✨", label: "Sparkles" },
+  { emoji: "👾", label: "Alien" },
+  { emoji: "🎭", label: "Theater" },
+  { emoji: "🦊", label: "Fox" },
+  { emoji: "🎬", label: "Cinema" },
 ];
 
 type PageState = "checking" | "not_active" | "join_form" | "connected";
+
+/* ─── SVG Icons ───────────────────────────────────────────── */
+
+function BroadcastIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+      <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+      <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" />
+      <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function ArrowRight() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+
+function ChatNavIcon({ active }: { active?: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke={active ? "var(--np-primary)" : "currentColor"}
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function LeaveIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+      <line x1="12" y1="2" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function UsersNavIcon({ active }: { active?: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke={active ? "var(--np-primary)" : "currentColor"}
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+/* ─── Bottom Nav Item ─────────────────────────────────────── */
+
+function BottomNavItem({
+  icon,
+  label,
+  onClick,
+  active,
+  danger,
+  badge,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+  danger?: boolean;
+  badge?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "4px",
+        padding: "8px 12px",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: danger
+          ? "#FF6B6B"
+          : active
+            ? "var(--np-primary)"
+            : "var(--np-on-surface-variant)",
+        transition: "color 0.2s ease",
+        position: "relative",
+        fontFamily: "var(--np-font-body)",
+      }}
+    >
+      <div style={{ position: "relative" }}>
+        {icon}
+        {badge && (
+          <div
+            style={{
+              position: "absolute",
+              top: "-3px",
+              right: "-3px",
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "var(--np-tertiary)",
+              boxShadow: "0 0 6px rgba(255, 107, 153, 0.6)",
+            }}
+          />
+        )}
+      </div>
+      <span
+        style={{
+          fontSize: "0.6rem",
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
+/* ─── Stream View (Connected) ─────────────────────────────── */
+
+function ViewerContent() {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [viewersOpen, setViewersOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const router = useRouter();
+  const participants = useParticipants();
+  const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
+  const { name: roomName, state: roomState } = room;
+
+  const handleNewMessage = useCallback(() => {
+    if (!chatOpen) {
+      setUnreadCount((c) => c + 1);
+    }
+  }, [chatOpen]);
+
+  const handleOpenChat = () => {
+    if (chatOpen) {
+      setChatOpen(false);
+    } else {
+      setChatOpen(true);
+      setUnreadCount(0);
+    }
+  };
+
+  const onLeave = () => {
+    room.disconnect();
+    router.push("/");
+  };
+
+  return (
+    <div className="relative w-full h-screen overflow-hidden" style={{ background: "var(--np-background)" }}>
+      {/* Video Area — full screen */}
+      <div className="w-full h-full">
+        <StreamPlayer />
+      </div>
+
+      {/* LIVE badge */}
+      {roomState === ConnectionState.Connected && (
+        <div
+          style={{
+            position: "absolute",
+            top: "16px",
+            left: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "4px 12px",
+            borderRadius: "0.5rem",
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(12px)",
+            zIndex: 15,
+          }}
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "#FF4444",
+              animation: "pulse 2s ease-in-out infinite",
+            }}
+          />
+          <span
+            style={{
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "var(--np-on-surface)",
+              fontFamily: "var(--np-font-body)",
+            }}
+          >
+            Live
+          </span>
+        </div>
+      )}
+
+      {/* Bottom Navigation Bar */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "24px",
+          padding: "16px 24px 32px",
+          background: "linear-gradient(to top, rgba(11, 14, 20, 0.95), transparent)",
+          zIndex: 20,
+        }}
+      >
+        <BottomNavItem
+          icon={<ChatNavIcon active={chatOpen} />}
+          label="Chat"
+          onClick={() => { handleOpenChat(); setViewersOpen(false); }}
+          active={chatOpen}
+          badge={!chatOpen && unreadCount > 0}
+        />
+        <BottomNavItem
+          icon={<UsersNavIcon active={viewersOpen} />}
+          label={`${participants.length}`}
+          onClick={() => { setViewersOpen(!viewersOpen); setChatOpen(false); }}
+          active={viewersOpen}
+          badge={(() => {
+            try {
+              const meta = localParticipant.metadata && JSON.parse(localParticipant.metadata);
+              return meta?.invited_to_stage && !meta?.hand_raised;
+            } catch { return false; }
+          })()}
+        />
+        <BottomNavItem
+          icon={<LeaveIcon />}
+          label="Leave"
+          onClick={onLeave}
+          danger
+        />
+      </div>
+
+      {/* Bottom Sheet Overlay (backdrop) */}
+      {(chatOpen || viewersOpen) && (
+        <div
+          onClick={() => { setChatOpen(false); setViewersOpen(false); }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            zIndex: 25,
+          }}
+        />
+      )}
+
+      {/* Who's Here Bottom Sheet */}
+      <div
+        className={cn(
+          "transition-transform duration-300 ease-out",
+          viewersOpen ? "translate-y-0" : "translate-y-full",
+        )}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "55vh",
+          background: "var(--np-surface-container-high)",
+          borderTopLeftRadius: "24px",
+          borderTopRightRadius: "24px",
+          zIndex: 30,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px 20px",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--np-font-display)",
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              color: "var(--np-primary)",
+            }}
+          >
+            Who&rsquo;s Here
+          </span>
+          <button
+            type="button"
+            onClick={() => setViewersOpen(false)}
+            style={{
+              background: "var(--np-surface-container-highest)",
+              border: "none",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "var(--np-on-surface-variant)",
+              transition: "background 0.2s ease",
+            }}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Content */}
+        <PresencePanel isHost={false} />
+      </div>
+
+      {/* Chat Bottom Sheet */}
+      <div
+        className={cn(
+          "transition-transform duration-300 ease-out",
+          chatOpen ? "translate-y-0" : "translate-y-full",
+        )}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "55vh",
+          background: "var(--np-surface-container-high)",
+          borderTopLeftRadius: "24px",
+          borderTopRightRadius: "24px",
+          zIndex: 30,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Chat Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px 20px",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--np-font-display)",
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              color: "var(--np-primary)",
+            }}
+          >
+            Chat
+          </span>
+          <button
+            type="button"
+            onClick={() => setChatOpen(false)}
+            style={{
+              background: "var(--np-surface-container-highest)",
+              border: "none",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "var(--np-on-surface-variant)",
+              transition: "background 0.2s ease",
+            }}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Chat Content */}
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          <Chat onNewMessage={handleNewMessage} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StreamView({
   serverUrl,
@@ -64,20 +476,7 @@ function StreamView({
   roomToken: string;
   authToken: string;
 }) {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
-
-  const handleNewMessage = useCallback(() => {
-    if (!chatOpen) {
-      setUnreadCount((c) => c + 1);
-    }
-  }, [chatOpen]);
-
-  const handleOpenChat = () => {
-    setChatOpen(!chatOpen);
-    if (!chatOpen) setUnreadCount(0);
-  };
 
   return (
     <TokenContext.Provider value={authToken}>
@@ -86,46 +485,13 @@ function StreamView({
         token={roomToken}
         onDisconnected={() => router.push("/")}
       >
-        <div className="relative w-full h-screen overflow-hidden">
-          <Flex direction="column" className="w-full h-full">
-            <Box className="flex-1 bg-gray-1 min-h-0">
-              <StreamPlayer />
-            </Box>
-            <ReactionBar />
-          </Flex>
-
-          {/* Chat toggle button */}
-          <button
-            onClick={handleOpenChat}
-            className={cn(
-              "fixed top-1/2 -translate-y-1/2 z-30 bg-accent-3 border border-accent-5 p-3 rounded-l-xl transition-all duration-300 cursor-pointer",
-              chatOpen ? "right-[calc(100%-16px)] sm:right-[340px]" : "right-0",
-            )}
-          >
-            <div className="relative">
-              {chatOpen ? <Cross1Icon /> : <ChatBubbleIcon />}
-              {!chatOpen && unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-9 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </div>
-          </button>
-
-          {/* Chat panel */}
-          <div
-            className={cn(
-              "fixed right-0 top-0 h-full w-full sm:w-[340px] z-20 bg-accent-2 border-l border-accent-5 transition-transform duration-300",
-              chatOpen ? "translate-x-0" : "translate-x-full",
-            )}
-          >
-            <Chat onNewMessage={handleNewMessage} />
-          </div>
-        </div>
+        <ViewerContent />
       </LiveKitRoom>
     </TokenContext.Provider>
   );
 }
+
+/* ─── Main Watch Page ─────────────────────────────────────── */
 
 export default function WatchPage({
   roomName,
@@ -136,7 +502,7 @@ export default function WatchPage({
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [authToken, setAuthToken] = useState("");
   const [roomToken, setRoomToken] = useState("");
   const [loading, setLoading] = useState(false);
@@ -170,7 +536,7 @@ export default function WatchPage({
         body: JSON.stringify({
           room_name: roomName,
           identity: name,
-          avatar_emoji: selectedAvatar || undefined,
+          avatar_emoji: AVATARS[selectedAvatar].emoji,
         }),
       });
 
@@ -193,6 +559,7 @@ export default function WatchPage({
     }
   };
 
+  // ── Connected: show stream ──
   if (pageState === "connected" && authToken && roomToken) {
     return (
       <StreamView
@@ -203,139 +570,183 @@ export default function WatchPage({
     );
   }
 
+  // ── Checking: loading spinner ──
   if (pageState === "checking") {
     return (
-      <Flex align="center" justify="center" className="min-h-screen">
-        <Flex direction="column" align="center" gap="3">
+      <div className="np-page">
+        <div className="np-card" style={{ alignItems: "center", gap: "16px" }}>
+          <div className="np-broadcast-icon animate-fade-in-up">
+            <BroadcastIcon />
+          </div>
           <Spinner />
-          <Text size="2" className="text-gray-11">
+          <p className="np-subtitle animate-fade-in-up-delay-1" style={{ textAlign: "center" }}>
             Checking stream status...
-          </Text>
-        </Flex>
-      </Flex>
+          </p>
+        </div>
+      </div>
     );
   }
 
+  // ── Not active: stream unavailable ──
   if (pageState === "not_active") {
     return (
-      <Flex align="center" justify="center" className="min-h-screen p-4">
-        <Card className="p-6 w-full max-w-[420px]">
-          <Flex direction="column" align="center" gap="4">
-            <Text size="6">📡</Text>
-            <Heading size="4">Stream not available</Heading>
-            <Text size="2" className="text-gray-11 text-center">
-              The stream &quot;{decodeURI(roomName)}&quot; hasn&apos;t started
-              yet or has ended.
-            </Text>
-            <Flex gap="3" mt="2">
-              <Button
-                variant="soft"
-                color="gray"
-                onClick={() => router.push("/")}
-              >
-                Go home
-              </Button>
-              <Button onClick={checkStream}>Check again</Button>
-            </Flex>
-          </Flex>
-        </Card>
-      </Flex>
+      <div className="np-page">
+        <div className="np-card animate-fade-in-up" style={{ alignItems: "center", textAlign: "center" }}>
+          <div style={{ fontSize: "3rem" }}>📡</div>
+          <h2 className="np-title" style={{ fontSize: "1.75rem" }}>
+            Stream not available
+          </h2>
+          <p className="np-subtitle">
+            The stream &quot;{decodeURI(roomName)}&quot; hasn&apos;t started yet
+            or has ended.
+          </p>
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "12px 20px",
+                background: "var(--np-surface-container-high)",
+                color: "var(--np-on-surface)",
+                border: "1px solid rgba(69, 72, 79, 0.15)",
+                borderRadius: "0.75rem",
+                fontFamily: "var(--np-font-body)",
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              <HomeIcon /> Go home
+            </button>
+            <button
+              type="button"
+              onClick={checkStream}
+              className="np-btn-primary"
+              style={{ width: "auto", padding: "12px 20px", fontSize: "0.875rem" }}
+            >
+              <RefreshIcon /> Check again
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // join_form state
+  // ── Join form ──
   return (
-    <Flex align="center" justify="center" className="min-h-screen p-4">
-      <Card className="p-4 sm:p-6 w-full max-w-[420px]">
-        <Heading size="4" className="mb-4">
-          Join {decodeURI(roomName)}
-        </Heading>
-
-        <Flex direction="column" gap="4">
-          <label>
-            <Text as="div" size="2" mb="1" weight="bold">
-              Your name
-            </Text>
-            <TextField.Root>
-              <TextField.Slot>
-                {selectedAvatar ? (
-                  <Text size="2">{selectedAvatar}</Text>
-                ) : (
-                  <Avatar
-                    size="1"
-                    radius="full"
-                    fallback={name ? name[0] : <PersonIcon />}
-                  />
-                )}
-              </TextField.Slot>
-              <TextField.Input
-                placeholder="Enter your name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyUp={(e) => {
-                  if (e.key === "Enter" && name) {
-                    onJoin();
-                  }
-                }}
-              />
-            </TextField.Root>
-          </label>
-
-          <div>
-            <Text as="div" size="2" mb="2" weight="bold">
-              Choose avatar
-            </Text>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATAR_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() =>
-                    setSelectedAvatar(emoji === selectedAvatar ? "" : emoji)
-                  }
-                  className={cn(
-                    "text-xl p-2 rounded-xl border transition-colors",
-                    selectedAvatar === emoji
-                      ? "border-accent-9 bg-accent-3"
-                      : "border-transparent hover:bg-accent-2",
-                  )}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+    <div className="np-page">
+      <div className="np-card">
+        {/* Broadcast Icon */}
+        <div className="animate-fade-in-up" style={{ textAlign: "center" }}>
+          <div className="np-broadcast-icon">
+            <BroadcastIcon />
           </div>
+        </div>
 
-          {error && (
-            <Text size="2" color="red">
-              {error}
-            </Text>
-          )}
+        {/* Title & Subtitle */}
+        <div className="animate-fade-in-up-delay-1" style={{ textAlign: "center" }}>
+          <h1 className="np-title" style={{ fontSize: "2.5rem", marginBottom: "12px" }}>
+            Live Studio
+          </h1>
+          <p className="np-subtitle">
+            Ready to jump into the stream? Set your stage name and pick an
+            identity.
+          </p>
+        </div>
 
-          <Flex gap="3" justify="between" align="center">
-            <Button
-              variant="soft"
-              color="gray"
-              onClick={() => router.push("/")}
-            >
-              Cancel
-            </Button>
-            <Button disabled={!name || loading} onClick={onJoin}>
-              {loading ? (
-                <Flex gap="2" align="center">
-                  <Spinner />
-                  <Text>Joining...</Text>
-                </Flex>
-              ) : (
-                <>
-                  Join stream{" "}
-                  <ArrowRightIcon className={cn(name && "animate-wiggle")} />
-                </>
-              )}
-            </Button>
-          </Flex>
-        </Flex>
-      </Card>
-    </Flex>
+        {/* YOUR NAME */}
+        <div className="animate-fade-in-up-delay-2">
+          <label className="np-label" style={{ marginBottom: "8px", display: "block" }}>
+            Your Name
+          </label>
+          <div className="np-input-wrapper">
+            <input
+              id="display-name-input"
+              type="text"
+              className="np-input"
+              placeholder="Enter your display name..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyUp={(e) => {
+                if (e.key === "Enter" && name) {
+                  onJoin();
+                }
+              }}
+            />
+            <span className="np-input-icon">
+              <UserIcon />
+            </span>
+          </div>
+        </div>
+
+        {/* SELECT AVATAR */}
+        <div className="animate-fade-in-up-delay-3">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: "12px",
+            }}
+          >
+            <span className="np-label">Select Avatar</span>
+            <span style={{ fontSize: "0.8rem", color: "var(--np-on-surface-variant)" }}>
+              Pick your vibe
+            </span>
+          </div>
+          <div className="np-avatar-grid">
+            {AVATARS.map((avatar, idx) => (
+              <button
+                key={avatar.label}
+                id={`avatar-${idx}`}
+                className={`np-avatar-item ${selectedAvatar === idx ? "selected" : ""}`}
+                onClick={() => setSelectedAvatar(idx)}
+                title={avatar.label}
+                type="button"
+              >
+                {avatar.emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              padding: "12px 16px",
+              background: "rgba(255, 9, 125, 0.15)",
+              borderLeft: "4px solid var(--np-tertiary)",
+              borderRadius: "0.5rem",
+              color: "var(--np-tertiary)",
+              fontSize: "0.875rem",
+              fontFamily: "var(--np-font-body)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* JOIN BUTTON */}
+        <div className="animate-fade-in-up-delay-4">
+          <button
+            id="join-stream-btn"
+            className="np-btn-primary"
+            disabled={!name.trim() || loading}
+            onClick={onJoin}
+            type="button"
+          >
+            {loading ? "Joining..." : "Join Stream"}
+            {!loading && <ArrowRight />}
+          </button>
+        </div>
+
+        {/* Footer decoration */}
+        <div className="np-footer-bar" />
+      </div>
+    </div>
   );
 }

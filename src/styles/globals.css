@@ -1,19 +1,458 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss/base";
 @import "@radix-ui/themes/styles.css";
 
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Neon Pulse Design Tokens ─────────────────────────────── */
+:root {
+  --np-background: #0B0E14;
+  --np-surface: #0B0E14;
+  --np-surface-container: #161A21;
+  --np-surface-container-low: #111419;
+  --np-surface-container-high: #1C2028;
+  --np-surface-container-highest: #22262F;
+  --np-surface-container-lowest: #000000;
+  --np-surface-variant: #22262F;
+
+  --np-primary: #C19CFF;
+  --np-primary-dim: #9146FF;
+  --np-primary-fixed: #D4BFFF;
+  --np-secondary: #00E3FD;
+  --np-secondary-dim: #00B8CC;
+  --np-secondary-container: #003D44;
+  --np-tertiary: #FF6B99;
+  --np-tertiary-container: #FF097D;
+
+  --np-on-surface: #ECEDF6;
+  --np-on-surface-variant: #94A3B8;
+  --np-on-secondary-container: #00E3FD;
+  --np-outline: #45484F;
+  --np-outline-variant: #45484F;
+
+  --np-font-display: 'Space Grotesk', sans-serif;
+  --np-font-body: 'Manrope', sans-serif;
+}
+
+/* ─── Base Reset ───────────────────────────────────────────── */
+body {
+  background-color: var(--np-background);
+  color: var(--np-on-surface);
+  font-family: var(--np-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Glassmorphism Utilities ──────────────────────────────── */
+.glass {
+  background: rgba(34, 38, 47, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.glass-subtle {
+  background: rgba(34, 38, 47, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ─── Neon Pulse Input ─────────────────────────────────────── */
+.np-input {
+  width: 100%;
+  padding: 14px 16px;
+  padding-right: 44px;
+  background-color: var(--np-surface-container-highest);
+  color: var(--np-on-surface);
+  border: 1px solid rgba(69, 72, 79, 0.15);
+  border-radius: 0.75rem;
+  font-family: var(--np-font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.np-input::placeholder {
+  color: var(--np-on-surface-variant);
+  opacity: 0.7;
+}
+
+.np-input:focus {
+  border-color: rgba(0, 227, 253, 0.3);
+  box-shadow: 0 0 0 3px rgba(0, 227, 253, 0.08);
+}
+
+/* ─── Gradient CTA Button ──────────────────────────────────── */
+.np-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, var(--np-primary-dim), var(--np-primary));
+  color: #fff;
+  font-family: var(--np-font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.25s ease, opacity 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.np-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(145, 70, 255, 0.35);
+}
+
+.np-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.np-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─── Section Label (HUD Style) ────────────────────────────── */
+.np-label {
+  font-family: var(--np-font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--np-secondary);
+}
+
+/* ─── Avatar Grid ──────────────────────────────────────────── */
+.np-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.np-avatar-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  background-color: var(--np-surface-container-high);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+.np-avatar-item:hover {
+  border-color: rgba(69, 72, 79, 0.4);
+  transform: scale(1.05);
+}
+
+.np-avatar-item.selected {
+  border-color: var(--np-secondary);
+  box-shadow: 0 0 12px rgba(0, 227, 253, 0.35);
+}
+
+.np-avatar-item.selected::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--np-secondary);
+}
+
+/* ─── Toggle Row ───────────────────────────────────────────── */
+.np-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background-color: var(--np-surface-container-high);
+  border-radius: 0.75rem;
+  gap: 12px;
+}
+
+.np-toggle-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.np-toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.625rem;
+  background-color: var(--np-surface-container-highest);
+  color: var(--np-secondary);
+  flex-shrink: 0;
+}
+
+/* ─── Custom Toggle Switch ─────────────────────────────────── */
+.np-toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background-color: var(--np-surface-container-highest);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+}
+
+.np-toggle.active {
+  background-color: var(--np-secondary);
+}
+
+.np-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.25s ease;
+}
+
+.np-toggle.active::after {
+  transform: translateX(22px);
+}
+
+/* ─── Page Container ───────────────────────────────────────── */
+.np-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--np-background);
+}
+
+.np-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px 0;
+}
+
+/* ─── Header ───────────────────────────────────────────────── */
+.np-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: var(--np-surface-container);
+  border-radius: 0.75rem;
+}
+
+.np-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.np-header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, var(--np-primary-dim), var(--np-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+/* ─── Broadcast Icon ──────────────────────────────────────── */
+.np-broadcast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid rgba(69, 72, 79, 0.2);
+  color: var(--np-on-surface);
+  margin: 0 auto;
+}
+
+/* ─── Input Wrapper ────────────────────────────────────────── */
+.np-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.np-input-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--np-on-surface-variant);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ─── Subtitle ─────────────────────────────────────────────── */
+.np-subtitle {
+  font-family: var(--np-font-body);
+  font-size: 0.95rem;
+  color: var(--np-on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ─── Display Title ────────────────────────────────────────── */
+.np-title {
+  font-family: var(--np-font-display);
+  font-weight: 700;
+  color: var(--np-on-surface);
+  line-height: 1.1;
+}
+
+/* ─── Footer decoration / subtle bar ───────────────────────── */
+.np-footer-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--np-surface-container-high);
+  margin: 0 auto;
+}
+
+/* ─── Radix Overrides ──────────────────────────────────────── */
 @layer components {
-  /* Apple-like rounded corners for Radix Themes Button only */
   .rt-Button {
     @apply rounded-xl;
   }
 }
 
+/* ─── Cursor ───────────────────────────────────────────────── */
 button:not(:disabled),
 [role="button"]:not(:disabled),
 a[href],
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* ─── Animations ───────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up-delay-1 {
+  animation: fadeInUp 0.5s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fadeInUp 0.5s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-3 {
+  animation: fadeInUp 0.5s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-4 {
+  animation: fadeInUp 0.5s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 227, 253, 0.35); }
+  50% { box-shadow: 0 0 20px rgba(0, 227, 253, 0.5); }
+}
+
+.np-avatar-item.selected {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── Presence Panel ───────────────────────────────────────── */
+.np-presence-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 0.75rem;
+  transition: background-color 0.2s ease;
+  gap: 12px;
+}
+
+.np-presence-item:hover {
+  background-color: var(--np-surface-container-highest);
+}
+
+.np-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--np-on-surface);
+  font-family: var(--np-font-body);
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: 1px solid rgba(69, 72, 79, 0.3);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.np-btn-ghost:hover {
+  background-color: rgba(69, 72, 79, 0.15);
+  border-color: rgba(69, 72, 79, 0.5);
+}
+
+.np-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, var(--np-primary-dim), var(--np-primary));
+  color: #fff;
+  font-family: var(--np-font-body);
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+  white-space: nowrap;
+}
+
+.np-btn-sm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(145, 70, 255, 0.35);
 }

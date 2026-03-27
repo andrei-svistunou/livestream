@@ -1,14 +1,12 @@
 import "@/styles/globals.css";
 
-import { Theme, ThemePanel } from "@radix-ui/themes";
+import { Theme } from "@radix-ui/themes";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Livestream with LiveKit",
-  description: "A sample full-stack application built with LiveKit",
+  title: "Live Studio — Stream & Watch",
+  description:
+    "A premium livestream platform built with LiveKit. Start streaming or join an audience in seconds.",
 };
 
 export default function RootLayout({
@@ -18,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="font-body">
         <Theme
           appearance="dark"
           accentColor="purple"
@@ -26,7 +24,6 @@ export default function RootLayout({
           radius="none"
         >
           {children}
-          <ThemePanel defaultOpen={false} />
         </Theme>
       </body>
     </html>

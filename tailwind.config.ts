@@ -10,6 +10,29 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        np: {
+          background: "#0B0E14",
+          surface: "#0B0E14",
+          "surface-container": "#161A21",
+          "surface-container-low": "#111419",
+          "surface-container-high": "#1C2028",
+          "surface-container-highest": "#22262F",
+          "surface-container-lowest": "#000000",
+          primary: "#C19CFF",
+          "primary-dim": "#9146FF",
+          secondary: "#00E3FD",
+          "secondary-dim": "#00B8CC",
+          tertiary: "#FF6B99",
+          "on-surface": "#ECEDF6",
+          "on-surface-variant": "#94A3B8",
+          outline: "#45484F",
+        },
+      },
+      fontFamily: {
+        display: ["'Space Grotesk'", "sans-serif"],
+        body: ["'Manrope'", "sans-serif"],
+      },
       animation: {
         wiggle: "wiggle 1s ease-in-out infinite",
       },

@@ -30,7 +30,6 @@ import type { MutableRefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MediaDeviceSettings } from "./media-device-settings";
-import { PresenceDialog } from "./presence-dialog";
 import { useAuthToken } from "./token-context";
 
 function clampNumber(value: number, min: number, max: number) {
@@ -426,24 +425,7 @@ export function StreamPlayer({ isHost = false }) {
               backgroundColor: "#000",
             }}
           >
-            <Button
-              size="1"
-              variant="soft"
-              className="cursor-pointer"
-              disabled={!Boolean(roomName)}
-              onClick={() =>
-                copy(`${window.location.origin}/watch/${roomName}`)
-              }
-            >
-              {roomState === ConnectionState.Connected ? (
-                <>
-                  {roomName} <CopyIcon />
-                </>
-              ) : (
-                "Loading..."
-              )}
-            </Button>
-            {roomName && canHost && (
+            {/* {roomName && canHost && (
               <Flex gap="2">
                 <MediaDeviceSettings />
                 <Flex gap="1" align="center">
@@ -478,83 +460,8 @@ export function StreamPlayer({ isHost = false }) {
                     +
                   </Button>
                 </Flex>
-                {roomMetadata?.creator_identity !==
-                  localParticipant.identity && (
-                  <Button size="1" onClick={onLeaveStage}>
-                    Leave stage
-                  </Button>
-                )}
-                {isHost &&
-                  roomMetadata?.creator_identity ===
-                    localParticipant.identity && (
-                    <Button
-                      size="1"
-                      color="red"
-                      variant="soft"
-                      disabled={
-                        roomState !== ConnectionState.Connected ||
-                        stoppingStream
-                      }
-                      onClick={onStopStream}
-                    >
-                      {stoppingStream ? "Stopping..." : "Stop stream"}
-                    </Button>
-                  )}
               </Flex>
-            )}
-          </Flex>
-          <Flex gap="2" align="center" wrap="wrap">
-            {roomState === ConnectionState.Connected && (
-              <Flex gap="1" align="center">
-                <div className="rounded-6 bg-red-9 w-2 h-2 animate-pulse" />
-                <Text size="1" className="uppercase text-accent-11">
-                  Live
-                </Text>
-              </Flex>
-            )}
-            <PresenceDialog isHost={isHost}>
-              <div className="relative">
-                {showNotification && (
-                  <div className="absolute flex h-3 w-3 -top-1 -right-1">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-6 bg-accent-11 opacity-75"></span>
-                    <span className="relative inline-flex rounded-6 h-3 w-3 bg-accent-11"></span>
-                  </div>
-                )}
-                <Button
-                  size="1"
-                  variant="soft"
-                  disabled={roomState !== ConnectionState.Connected}
-                >
-                  {roomState === ConnectionState.Connected ? (
-                    <EyeOpenIcon />
-                  ) : (
-                    <EyeClosedIcon />
-                  )}
-                  {roomState === ConnectionState.Connected
-                    ? participants.length
-                    : ""}
-                </Button>
-              </div>
-            </PresenceDialog>
-            {document.pictureInPictureEnabled && (
-              <Button
-                size="1"
-                variant={pipActive ? "solid" : "soft"}
-                onClick={togglePiP}
-              >
-                PiP
-              </Button>
-            )}
-            {!isHost && (
-              <Button
-                size="1"
-                color="red"
-                variant="soft"
-                onClick={onExitStream}
-              >
-                <ExitIcon /> Exit
-              </Button>
-            )}
+            )} */}
           </Flex>
         </Flex>
       </div>
