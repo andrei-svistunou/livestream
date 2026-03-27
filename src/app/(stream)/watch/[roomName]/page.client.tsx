@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { ConnectionState } from "livekit-client";
 import { LiveKitRoom, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { JoinStreamResponse } from "@/lib/controller";
 
 const AVATARS = [
@@ -121,7 +121,17 @@ function UsersNavIcon({ active }: { active?: boolean }) {
     </svg>
   );
 }
-
+function PipIcon({ active }: { active?: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke={active ? "var(--np-primary)" : "currentColor"}
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <rect x="12" y="9" width="8" height="6" rx="1" fill={active ? "var(--np-primary)" : "none"} />
+      <line x1="2" y1="21" x2="22" y2="21" />
+    </svg>
+  );
+}
 /* ─── Bottom Nav Item ─────────────────────────────────────── */
 
 function BottomNavItem({
@@ -205,13 +215,35 @@ function ViewerContent() {
   const { localParticipant } = useLocalParticipant();
   const room = useRoomContext();
   const { name: roomName, state: roomState } = room;
-
+const streamAreaRef = useRef<HTMLDivElement>(null);
   const handleNewMessage = useCallback(() => {
     if (!chatOpen) {
       setUnreadCount((c) => c + 1);
     }
   }, [chatOpen]);
-
+ const [pipActive, setPipActive] = useState(false);
+ const togglePiP = async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setPipActive(false);
+      } else if (streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        const video = videos[videos.length - 1] || videos[0];
+        if (video && document.pictureInPictureEnabled) {
+          await video.requestPictureInPicture();
+          setPipActive(true);
+          video.addEventListener(
+            "leavepictureinpicture",
+            () => setPipActive(false),
+            { once: true },
+          );
+        }
+      }
+    } catch {
+      // PiP might not be supported
+    }
+  };
   const handleOpenChat = () => {
     if (chatOpen) {
       setChatOpen(false);
@@ -227,9 +259,9 @@ function ViewerContent() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: "var(--np-background)" }}>
+    <div className="relative w-full overflow-hidden" style={{ height: "100dvh", background: "var(--np-background)" }}>
       {/* Video Area — full screen */}
-      <div className="w-full h-full">
+      <div ref={streamAreaRef} className="w-full h-full">
         <StreamPlayer />
       </div>
 
@@ -274,6 +306,40 @@ function ViewerContent() {
         </div>
       )}
 
+      {/* Top Right Controls */}
+      <div
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          display: "flex",
+          gap: "12px",
+          zIndex: 15,
+        }}
+      >
+        <button
+          type="button"
+          onClick={togglePiP}
+          style={{
+            background: "rgba(0, 0, 0, 0.6)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: pipActive ? "var(--np-primary)" : "var(--np-on-surface)",
+            cursor: "pointer",
+            backdropFilter: "blur(12px)",
+            transition: "all 0.2s ease",
+          }}
+          title="Picture-in-Picture"
+        >
+          <PipIcon active={pipActive} />
+        </button>
+      </div>
+
       {/* Bottom Navigation Bar */}
       <div
         style={{
@@ -284,8 +350,8 @@ function ViewerContent() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: "24px",
-          padding: "16px 24px 32px",
+          gap: "clamp(12px, 4vw, 24px)",
+          padding: "16px 16px 32px",
           background: "linear-gradient(to top, rgba(11, 14, 20, 0.95), transparent)",
           zIndex: 20,
         }}

@@ -130,16 +130,16 @@ body {
 /* ─── Avatar Grid ──────────────────────────────────────────── */
 .np-avatar-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: max(8px, 2vw);
 }
 
 .np-avatar-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 1rem;
   background-color: var(--np-surface-container-high);
   border: 2px solid transparent;
@@ -235,7 +235,7 @@ body {
 
 /* ─── Page Container ───────────────────────────────────────── */
 .np-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;

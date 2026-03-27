@@ -281,7 +281,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: "var(--np-background)" }}>
+    <div className="relative w-full overflow-hidden" style={{ height: "100dvh", background: "var(--np-background)" }}>
       {/* Video Area — full screen */}
       <div ref={streamAreaRef} className="w-full h-full">
         <StreamPlayer isHost={isHost} />
@@ -352,6 +352,61 @@ function HostContent({ isHost }: { isHost: boolean }) {
         </div>
       )}
 
+      {/* Top Right Controls */}
+      <div
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          display: "flex",
+          gap: "12px",
+          zIndex: 15,
+        }}
+      >
+        <button
+          type="button"
+          onClick={togglePiP}
+          style={{
+            background: "rgba(0, 0, 0, 0.6)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: pipActive ? "var(--np-primary)" : "var(--np-on-surface)",
+            cursor: "pointer",
+            backdropFilter: "blur(12px)",
+            transition: "all 0.2s ease",
+          }}
+          title="Picture-in-Picture"
+        >
+          <PipIcon active={pipActive} />
+        </button>
+        <button
+          type="button"
+          onClick={copyLink}
+          style={{
+            background: "rgba(0, 0, 0, 0.6)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--np-on-surface)",
+            cursor: "pointer",
+            backdropFilter: "blur(12px)",
+            transition: "all 0.2s ease",
+          }}
+          title="Copy Link"
+        >
+          <LinkIcon />
+        </button>
+      </div>
+
       {/* Bottom Navigation Bar */}
       <div
         style={{
@@ -360,11 +415,12 @@ function HostContent({ isHost }: { isHost: boolean }) {
           left: 0,
           right: 0,
           display: "flex",
+          flexWrap: "wrap",
           justifyContent: "center",
           alignItems: "center",
-          gap: "8px",
-          padding: "16px 24px 32px",
-          background: "linear-gradient(to top, rgba(11, 14, 20, 0.95), transparent)",
+          gap: "clamp(4px, 2vw, 8px)",
+          padding: "16px 12px 32px",
+          background: "linear-gradient(to top, rgba(11, 14, 20, 0.95) 0%, rgba(11, 14, 20, 0.8) 50%, transparent 100%)",
           zIndex: 20,
         }}
       >
@@ -386,17 +442,6 @@ function HostContent({ isHost }: { isHost: boolean }) {
           label="Camera"
           onClick={toggleCamera}
           active={localParticipant.isCameraEnabled}
-        />
-        <BottomNavItem
-          icon={<LinkIcon />}
-          label="Link"
-          onClick={copyLink}
-        />
-        <BottomNavItem
-          icon={<PipIcon active={pipActive} />}
-          label="PiP"
-          onClick={togglePiP}
-          active={pipActive}
         />
         <BottomNavItem
           icon={<UsersIcon />}
