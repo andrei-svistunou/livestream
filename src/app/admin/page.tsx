@@ -152,7 +152,7 @@ export default function AdminPage() {
     <div className="np-page">
       <div className="np-card">
         {/* Header Bar */}
-        <div className="np-header-bar animate-fade-in-up">
+        {/* <div className="np-header-bar animate-fade-in-up">
           <div className="np-header-brand">
             <div className="np-header-avatar">🎙️</div>
             <span
@@ -169,10 +169,12 @@ export default function AdminPage() {
           <div style={{ color: "var(--np-on-surface-variant)" }}>
             <BroadcastIcon size={22} />
           </div>
-        </div>
-
+        </div> */}
+<div className="animate-fade-in-up-delay-2 flex justify-center">
+  <img src="/logo_camera.svg"  width={100} height={100} alt="Logo" />
+</div>
         {/* Title & Subtitle */}
-        <div className="animate-fade-in-up-delay-1">
+        <div className="np-header-bar animate-fade-in-up">
           <h1
             className="np-title"
             style={{ fontSize: "2rem", marginBottom: "8px" }}
@@ -181,9 +183,9 @@ export default function AdminPage() {
             <br />
             Configuration
           </h1>
-          <p className="np-subtitle" style={{ fontSize: "0.875rem" }}>
-            Set the stage for your audience before going live.
-          </p>
+          <div style={{ color: "var(--np-on-surface-variant)" }}>
+            <BroadcastIcon size={44} />
+          </div>
         </div>
 
         {/* ROOM NAME */}
@@ -322,8 +324,6 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Footer */}
-        <div className="np-footer-bar" />
       </div>
     </div>
   );

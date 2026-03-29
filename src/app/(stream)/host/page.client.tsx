@@ -292,8 +292,8 @@ function HostContent({ isHost }: { isHost: boolean }) {
         <div
           style={{
             position: "absolute",
-            top: "16px",
-            left: "16px",
+            top: "20px",
+            left: "20px",
             display: "flex",
             alignItems: "center",
             gap: "6px",
@@ -333,7 +333,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
         <div
           style={{
             position: "absolute",
-            top: "16px",
+            top: "20px",
             left: "50%",
             transform: "translateX(-50%)",
             padding: "8px 20px",
@@ -356,8 +356,8 @@ function HostContent({ isHost }: { isHost: boolean }) {
       <div
         style={{
           position: "absolute",
-          top: "16px",
-          right: "16px",
+          top: "20px",
+          right: "20px",
           display: "flex",
           gap: "12px",
           zIndex: 15,

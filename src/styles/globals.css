@@ -239,7 +239,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 12px 24px;
   background-color: var(--np-background);
 }
 
@@ -249,7 +249,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 24px 0;
+  padding: 0;
 }
 
 /* ─── Header ───────────────────────────────────────────────── */
@@ -327,7 +327,7 @@ body {
 /* ─── Footer decoration / subtle bar ───────────────────────── */
 .np-footer-bar {
   width: 40px;
-  height: 4px;
+  /* height: 4px; */
   border-radius: 2px;
   background-color: var(--np-surface-container-high);
   margin: 0 auto;

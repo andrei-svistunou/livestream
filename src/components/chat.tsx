@@ -56,27 +56,57 @@ function ChatMessage({ message }: { message: ReceivedChatMessage }) {
   const color = isLocal ? "var(--np-primary)" : getUsernameColor(identity);
 
   return (
-    <div style={{ padding: "2px 0" }}>
-      <span
+    <div
+      style={{
+        padding: "2px 0",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: isLocal ? "flex-end" : "flex-start",
+      }}
+    >
+      <div
         style={{
-          fontWeight: 700,
-          fontSize: "0.875rem",
-          color,
-          fontFamily: "var(--np-font-body)",
+          textAlign: isLocal ? "right" : "left",
+          maxWidth: "90%",
+          wordBreak: "break-word",
         }}
       >
-        {identity}
-      </span>
-      <span
-        style={{
-          fontSize: "0.875rem",
-          color: "var(--np-on-surface)",
-          fontFamily: "var(--np-font-body)",
-          marginLeft: "6px",
-        }}
-      >
-        {message.message}
-      </span>
+        {!isLocal && (
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              color,
+              fontFamily: "var(--np-font-body)",
+              marginRight: "6px",
+            }}
+          >
+            {identity}
+          </span>
+        )}
+        <span
+          style={{
+            fontSize: "1rem",
+            color: "var(--np-on-surface)",
+            fontFamily: "var(--np-font-body)",
+          }}
+        >
+          {message.message}
+        </span>
+        {isLocal && (
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              color,
+              fontFamily: "var(--np-font-body)",
+              marginLeft: "6px",
+            }}
+          >
+            {identity}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

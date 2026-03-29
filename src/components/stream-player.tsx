@@ -349,7 +349,7 @@ export function StreamPlayer({ isHost = false }) {
                 className="absolute w-full h-full object-contain -scale-x-100 bg-transparent"
               />
             )}
-            <div className="absolute w-full h-full">
+            {/* <div className="absolute w-full h-full">
               <Badge
                 variant="outline"
                 color="gray"
@@ -357,7 +357,7 @@ export function StreamPlayer({ isHost = false }) {
               >
                 {localParticipant.identity} (you)
               </Badge>
-            </div>
+            </div> */}
           </div>
         )}
         {remoteVideoTracks.map((t) => (
@@ -394,7 +394,7 @@ export function StreamPlayer({ isHost = false }) {
               trackRef={t}
               className="absolute w-full h-full bg-transparent"
             />
-            <div className="absolute w-full h-full">
+            {/* <div className="absolute w-full h-full">
               <Badge
                 variant="outline"
                 color="gray"
@@ -402,7 +402,7 @@ export function StreamPlayer({ isHost = false }) {
               >
                 {t.participant.identity}
               </Badge>
-            </div>
+            </div> */}
           </div>
         ))}
       </Grid>

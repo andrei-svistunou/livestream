@@ -270,8 +270,8 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
         <div
           style={{
             position: "absolute",
-            top: "16px",
-            left: "16px",
+            top: "20px",
+            left: "20px",
             display: "flex",
             alignItems: "center",
             gap: "6px",
@@ -310,8 +310,8 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       <div
         style={{
           position: "absolute",
-          top: "16px",
-          right: "16px",
+          top: "20px",
+          right: "20px",
           display: "flex",
           gap: "12px",
           zIndex: 15,
@@ -708,18 +708,19 @@ export default function WatchPage({
         {/* Broadcast Icon */}
         <div className="animate-fade-in-up" style={{ textAlign: "center" }}>
           <div className="np-broadcast-icon">
-            <BroadcastIcon />
+            {/* <BroadcastIcon /> */}
+  <img src="/logo.svg"  width={100} height={100} alt="Logo" />
           </div>
         </div>
 
         {/* Title & Subtitle */}
         <div className="animate-fade-in-up-delay-1" style={{ textAlign: "center" }}>
           <h1 className="np-title" style={{ fontSize: "2.5rem", marginBottom: "12px" }}>
-            Live Studio
+            {decodeURI(roomName)}
           </h1>
           <p className="np-subtitle">
-            Ready to jump into the stream? Set your stage name and pick an
-            identity.
+            Set your name and pick an
+            avatar.
           </p>
         </div>
 
@@ -811,7 +812,7 @@ export default function WatchPage({
         </div>
 
         {/* Footer decoration */}
-        <div className="np-footer-bar" />
+        {/* <div className="np-footer-bar" /> */}
       </div>
     </div>
   );
