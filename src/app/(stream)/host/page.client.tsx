@@ -281,7 +281,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
   };
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: "100dvh", background: "var(--np-background)" }}>
+    <div className="relative w-full overflow-hidden" style={{ height: "100vh", background: "red" }}>
       {/* Video Area — full screen */}
       <div ref={streamAreaRef} className="w-full h-full">
         <StreamPlayer isHost={isHost} />

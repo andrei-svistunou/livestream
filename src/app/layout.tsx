@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-body">
+      <body className="font-body h-full w-full">
         <Theme
           appearance="dark"
           accentColor="purple"
