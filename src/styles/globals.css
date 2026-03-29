@@ -324,14 +324,7 @@ body {
   line-height: 1.1;
 }
 
-/* ─── Footer decoration / subtle bar ───────────────────────── */
-.np-footer-bar {
-  width: 40px;
-  /* height: 4px; */
-  border-radius: 2px;
-  background-color: var(--np-surface-container-high);
-  margin: 0 auto;
-}
+
 
 /* ─── Radix Overrides ──────────────────────────────────────── */
 @layer components {

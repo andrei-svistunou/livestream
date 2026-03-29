@@ -463,19 +463,6 @@ function HostContent({ isHost }: { isHost: boolean }) {
         />
       </div>
 
-      {/* Bottom Sheet Overlay (backdrop) */}
-      {(chatOpen || viewersOpen) && (
-        <div
-          onClick={() => { setChatOpen(false); setViewersOpen(false); }}
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0, 0, 0, 0.4)",
-            zIndex: 25,
-          }}
-        />
-      )}
-
       {/* Who's Here Bottom Sheet */}
       <div
         className={cn(

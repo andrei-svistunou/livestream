@@ -810,9 +810,6 @@ export default function WatchPage({
             {!loading && <ArrowRight />}
           </button>
         </div>
-
-        {/* Footer decoration */}
-        {/* <div className="np-footer-bar" /> */}
       </div>
     </div>
   );
