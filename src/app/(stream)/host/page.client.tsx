@@ -1,5 +1,6 @@
 "use client";
 
+import { CameraSettings } from "@/components/camera-settings";
 import { Chat } from "@/components/chat";
 import { PresencePanel } from "@/components/presence-dialog";
 import { StreamPlayer } from "@/components/stream-player";
@@ -196,6 +197,7 @@ function BottomNavItem({
 function HostContent({ isHost }: { isHost: boolean }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [viewersOpen, setViewersOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
   const [pipActive, setPipActive] = useState(false);
@@ -218,6 +220,8 @@ function HostContent({ isHost }: { isHost: boolean }) {
       setChatOpen(false);
     } else {
       setChatOpen(true);
+      setViewersOpen(false);
+      setCameraOpen(false);
       setUnreadCount(0);
     }
   };
@@ -229,7 +233,13 @@ function HostContent({ isHost }: { isHost: boolean }) {
   };
 
   const toggleCamera = () => {
-    localParticipant.setCameraEnabled(!localParticipant.isCameraEnabled);
+    if (cameraOpen) {
+      setCameraOpen(false);
+    } else {
+      setCameraOpen(true);
+      setChatOpen(false);
+      setViewersOpen(false);
+    }
   };
 
   const copyLink = () => {
@@ -442,12 +452,12 @@ function HostContent({ isHost }: { isHost: boolean }) {
           icon={<CameraIcon off={!localParticipant.isCameraEnabled} />}
           label="Camera"
           onClick={toggleCamera}
-          active={localParticipant.isCameraEnabled}
+          active={cameraOpen || localParticipant.isCameraEnabled}
         />
         <BottomNavItem
           icon={<UsersIcon />}
           label={roomState === ConnectionState.Connected ? `${participants.length}` : "Viewers"}
-          onClick={() => { setViewersOpen(true); setChatOpen(false); }}
+          onClick={() => { setViewersOpen(true); setChatOpen(false); setCameraOpen(false); }}
           active={viewersOpen}
           badge={participants.some((p) => {
             try {
@@ -463,6 +473,19 @@ function HostContent({ isHost }: { isHost: boolean }) {
           danger
         />
       </div>
+
+      {/* Bottom Sheet Overlay (backdrop) */}
+      {(chatOpen || viewersOpen || cameraOpen) && (
+        <div
+          onClick={() => { setChatOpen(false); setViewersOpen(false); setCameraOpen(false); }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            zIndex: 25,
+          }}
+        />
+      )}
 
       {/* Who's Here Bottom Sheet */}
       <div
@@ -596,6 +619,72 @@ function HostContent({ isHost }: { isHost: boolean }) {
         <div style={{ flex: 1, overflow: "hidden" }}>
           <Chat onNewMessage={handleNewMessage} />
         </div>
+      </div>
+
+      {/* Camera Bottom Sheet */}
+      <div
+        className={cn(
+          "transition-transform duration-300 ease-out",
+          cameraOpen ? "translate-y-0" : "translate-y-full",
+        )}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "55vh",
+          background: "var(--np-surface-container-high)",
+          borderTopLeftRadius: "24px",
+          borderTopRightRadius: "24px",
+          zIndex: 30,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Camera Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px 20px",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--np-font-display)",
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              color: "var(--np-primary)",
+            }}
+          >
+            Camera Settings
+          </span>
+          <button
+            type="button"
+            onClick={() => setCameraOpen(false)}
+            style={{
+              background: "var(--np-surface-container-highest)",
+              border: "none",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "var(--np-on-surface-variant)",
+              transition: "background 0.2s ease",
+            }}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Camera Content */}
+        <CameraSettings onClose={() => setCameraOpen(false)} />
       </div>
     </div>
   );

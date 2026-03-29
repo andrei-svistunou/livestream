@@ -414,7 +414,7 @@ export function StreamPlayer({ isHost = false }) {
         label="Click to allow audio playback"
         className="absolute top-0 h-full w-full bg-gray-2-translucent text-white"
       />
-      <div className="absolute top-0 w-full p-2">
+      {/* <div className="absolute top-0 w-full p-2">
         <Flex justify="between" align="start" wrap="wrap" gap="2">
           <Flex
             gap="2"
@@ -425,7 +425,7 @@ export function StreamPlayer({ isHost = false }) {
               backgroundColor: "#000",
             }}
           >
-            {/* {roomName && canHost && (
+            {roomName && canHost && (
               <Flex gap="2">
                 <MediaDeviceSettings />
                 <Flex gap="1" align="center">
@@ -461,10 +461,10 @@ export function StreamPlayer({ isHost = false }) {
                   </Button>
                 </Flex>
               </Flex>
-            )} */}
+            )}
           </Flex>
         </Flex>
-      </div>
+      </div> */}
     </div>
   );
 }
