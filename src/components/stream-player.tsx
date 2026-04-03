@@ -346,7 +346,7 @@ export function StreamPlayer({ isHost = false }) {
             {localParticipant.isCameraEnabled && localCameraTrack && (
               <VideoTrack
                 trackRef={localCameraTrack}
-                className="absolute w-full h-full object-contain -scale-x-100 bg-transparent"
+                className="absolute w-full h-full object-contain bg-transparent"
               />
             )}
             {/* <div className="absolute w-full h-full">
