@@ -116,6 +116,7 @@ function ChatMessage({ message }: { message: ReceivedChatMessage }) {
 export function Chat({ onNewMessage }: { onNewMessage?: () => void }) {
   const [draft, setDraft] = useState("");
   const { chatMessages, send } = useChat();
+  const { localParticipant } = useLocalParticipant();
   const { metadata } = useRoomInfo();
   const prevCountRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,13 +134,21 @@ export function Chat({ onNewMessage }: { onNewMessage?: () => void }) {
     return filtered;
   }, [chatMessages]);
 
-  // Notify parent of new messages
+  // Notify parent of new messages and play sound
   useEffect(() => {
     if (messages.length > prevCountRef.current && prevCountRef.current > 0) {
       onNewMessage?.();
+
+      const lastMessage = messages[messages.length - 1];
+      const isLocal = localParticipant.identity === lastMessage?.from?.identity;
+
+      if (!isLocal) {
+        const audio = new Audio('/notification.mp3');
+        audio.play().catch((err) => console.error("Audio playback failed:", err));
+      }
     }
     prevCountRef.current = messages.length;
-  }, [messages.length, onNewMessage]);
+  }, [messages.length, onNewMessage, messages, localParticipant.identity]);
 
   // Auto-scroll to bottom
   useEffect(() => {
