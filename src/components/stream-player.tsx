@@ -258,6 +258,17 @@ export function StreamPlayer({ isHost = false }) {
     (t) => t.participant.identity !== localParticipant.identity,
   );
 
+  // Screen share tracks
+  const localScreenTrack = useTracks([Track.Source.ScreenShare]).find(
+    (t) => t.participant.identity === localParticipant.identity,
+  );
+  const remoteScreenTracks = useTracks([Track.Source.ScreenShare]).filter(
+    (t) => t.participant.identity !== localParticipant.identity,
+  );
+  const remoteScreenAudioTracks = useTracks([Track.Source.ScreenShareAudio]).filter(
+    (t) => t.participant.identity !== localParticipant.identity,
+  );
+
   const authToken = useAuthToken();
   const [stoppingStream, setStoppingStream] = useState(false);
 
@@ -329,85 +340,97 @@ export function StreamPlayer({ isHost = false }) {
   return (
     <div ref={streamAreaRef} className="relative h-full w-full bg-black">
       <Grid className="w-full h-full absolute" gap="2">
-        {canHost && (
-          <div className="relative">
-            <Flex
-              className="absolute w-full h-full"
-              align="center"
-              justify="center"
-            >
-              <Avatar
-                size="9"
-                src={localMetadata?.avatar_image}
-                fallback={localAvatarFallback}
-                radius="full"
-              />
-            </Flex>
-            {localParticipant.isCameraEnabled && localCameraTrack && (
-              <VideoTrack
-                trackRef={localCameraTrack}
-                className="absolute w-full h-full object-contain bg-transparent"
-              />
+        {/* If screen share is active (local or remote), show ONLY screen share */}
+        {localScreenTrack || remoteScreenTracks.length > 0 ? (
+          <>
+            {/* Local screen share */}
+            {canHost && localScreenTrack && (
+              <div className="relative">
+                <VideoTrack
+                  trackRef={localScreenTrack}
+                  className="absolute w-full h-full object-contain bg-black"
+                />
+              </div>
             )}
-            {/* <div className="absolute w-full h-full">
-              <Badge
-                variant="outline"
-                color="gray"
-                className="absolute bottom-2 right-2"
-              >
-                {localParticipant.identity} (you)
-              </Badge>
-            </div> */}
-          </div>
-        )}
-        {remoteVideoTracks.map((t) => (
-          <div key={t.participant.identity} className="relative">
-            <Flex
-              className="absolute w-full h-full"
-              align="center"
-              justify="center"
-            >
-              {(() => {
-                let remoteMeta: ParticipantMetadata | undefined;
-                try {
-                  remoteMeta = (t.participant.metadata &&
-                    JSON.parse(t.participant.metadata)) as ParticipantMetadata;
-                } catch {
-                  remoteMeta = undefined;
-                }
-
-                return (
+            {/* Remote screen shares */}
+            {remoteScreenTracks.map((t) => (
+              <div key={`screen-${t.participant.identity}`} className="relative">
+                <VideoTrack
+                  trackRef={t}
+                  className="absolute w-full h-full object-contain bg-black"
+                />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            {/* Camera tiles (only when no screen share) */}
+            {canHost && (
+              <div className="relative">
+                <Flex
+                  className="absolute w-full h-full"
+                  align="center"
+                  justify="center"
+                >
                   <Avatar
                     size="9"
-                    src={remoteMeta?.avatar_image}
-                    fallback={
-                      remoteMeta?.avatar_emoji ??
-                      t.participant.identity[0] ??
-                      "?"
-                    }
+                    src={localMetadata?.avatar_image}
+                    fallback={localAvatarFallback}
                     radius="full"
                   />
-                );
-              })()}
-            </Flex>
-            <VideoTrack
-              trackRef={t}
-              className="absolute w-full h-full bg-transparent"
-            />
-            {/* <div className="absolute w-full h-full">
-              <Badge
-                variant="outline"
-                color="gray"
-                className="absolute bottom-2 right-2"
-              >
-                {t.participant.identity}
-              </Badge>
-            </div> */}
-          </div>
-        ))}
+                </Flex>
+                {localParticipant.isCameraEnabled && localCameraTrack && (
+                  <VideoTrack
+                    trackRef={localCameraTrack}
+                    className="absolute w-full h-full object-contain bg-transparent"
+                  />
+                )}
+              </div>
+            )}
+            {remoteVideoTracks.map((t) => (
+              <div key={t.participant.identity} className="relative">
+                <Flex
+                  className="absolute w-full h-full"
+                  align="center"
+                  justify="center"
+                >
+                  {(() => {
+                    let remoteMeta: ParticipantMetadata | undefined;
+                    try {
+                      remoteMeta = (t.participant.metadata &&
+                        JSON.parse(t.participant.metadata)) as ParticipantMetadata;
+                    } catch {
+                      remoteMeta = undefined;
+                    }
+
+                    return (
+                      <Avatar
+                        size="9"
+                        src={remoteMeta?.avatar_image}
+                        fallback={
+                          remoteMeta?.avatar_emoji ??
+                          t.participant.identity[0] ??
+                          "?"
+                        }
+                        radius="full"
+                      />
+                    );
+                  })()}
+                </Flex>
+                <VideoTrack
+                  trackRef={t}
+                  className="absolute w-full h-full bg-transparent"
+                />
+              </div>
+            ))}
+          </>
+        )}
       </Grid>
       {remoteAudioTracks.map((t) => (
         <AudioTrack trackRef={t} key={t.participant.identity} />
+      ))}
+      {remoteScreenAudioTracks.map((t) => (
+        <AudioTrack trackRef={t} key={`screen-audio-${t.participant.identity}`} />
       ))}
       <ConfettiCanvas />
       <StartAudio

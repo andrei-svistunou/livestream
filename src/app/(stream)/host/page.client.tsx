@@ -7,7 +7,7 @@ import { StreamPlayer } from "@/components/stream-player";
 import { TokenContext } from "@/components/token-context";
 import { cn } from "@/lib/utils";
 import { LiveKitRoom, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectionState } from "livekit-client";
 import { useCopyToClipboard } from "@/lib/clipboard";
 
@@ -94,6 +94,20 @@ function PipIcon({ active }: { active?: boolean }) {
       <rect x="2" y="3" width="20" height="14" rx="2" />
       <rect x="12" y="9" width="8" height="6" rx="1" fill={active ? "var(--np-primary)" : "none"} />
       <line x1="2" y1="21" x2="22" y2="21" />
+    </svg>
+  );
+}
+
+function ScreenShareIcon({ active }: { active?: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke={active ? "var(--np-primary)" : "currentColor"}
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M9 11l3-3 3 3" />
+      <path d="M12 8v6" />
     </svg>
   );
 }
@@ -201,6 +215,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
   const [pipActive, setPipActive] = useState(false);
+  const [screenSharing, setScreenSharing] = useState(false);
   const [_, copy] = useCopyToClipboard();
   const streamAreaRef = useRef<HTMLDivElement>(null);
 
@@ -208,6 +223,12 @@ function HostContent({ isHost }: { isHost: boolean }) {
   const participants = useParticipants();
   const room = useRoomContext();
   const { name: roomName, state: roomState } = room;
+
+  // Sync screenSharing state with actual LiveKit track state
+  // (handles the case when user stops sharing via the browser's native UI)
+  useEffect(() => {
+    setScreenSharing(localParticipant.isScreenShareEnabled);
+  }, [localParticipant.isScreenShareEnabled]);
 
   const handleNewMessage = useCallback(() => {
     if (!chatOpen) {
@@ -247,6 +268,22 @@ function HostContent({ isHost }: { isHost: boolean }) {
       copy(`${window.location.origin}/watch/${roomName}`);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    try {
+      const newEnabled = !localParticipant.isScreenShareEnabled;
+      await localParticipant.setScreenShareEnabled(newEnabled, {
+        audio: true,
+        selfBrowserSurface: "include",
+        surfaceSwitching: "include",
+        systemAudio: "include",
+      });
+      setScreenSharing(newEnabled);
+    } catch {
+      // User cancelled the screen share picker or error occurred
+      setScreenSharing(false);
     }
   };
 
@@ -453,6 +490,12 @@ function HostContent({ isHost }: { isHost: boolean }) {
           label="Camera"
           onClick={toggleCamera}
           active={cameraOpen || localParticipant.isCameraEnabled}
+        />
+        <BottomNavItem
+          icon={<ScreenShareIcon active={screenSharing} />}
+          label="Screen"
+          onClick={toggleScreenShare}
+          active={screenSharing}
         />
         <BottomNavItem
           icon={<UsersIcon />}
