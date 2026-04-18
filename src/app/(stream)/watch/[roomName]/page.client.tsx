@@ -132,6 +132,31 @@ function PipIcon({ active }: { active?: boolean }) {
     </svg>
   );
 }
+
+function FullscreenIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="var(--np-primary)"
+        strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+        <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+        <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+        <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
 /* ─── Bottom Nav Item ─────────────────────────────────────── */
 
 function BottomNavItem({
@@ -221,8 +246,10 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       setUnreadCount((c) => c + 1);
     }
   }, [chatOpen]);
- const [pipActive, setPipActive] = useState(false);
- const togglePiP = async () => {
+  const [pipActive, setPipActive] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const togglePiP = async () => {
     try {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
@@ -244,6 +271,39 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       // PiP might not be supported
     }
   };
+
+  const toggleFullscreen = async () => {
+    try {
+      const el = document.documentElement as any;
+      if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        }
+      } else {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }
+    } catch {
+      // Fullscreen might not be supported
+    }
+  };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
   const handleOpenChat = () => {
     if (chatOpen) {
       setChatOpen(false);
@@ -374,6 +434,12 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
               return meta?.invited_to_stage && !meta?.hand_raised;
             } catch { return false; }
           })()}
+        />
+        <BottomNavItem
+          icon={<FullscreenIcon active={isFullscreen} />}
+          label={isFullscreen ? "Exit Full" : "Fullwidth"}
+          onClick={toggleFullscreen}
+          active={isFullscreen}
         />
         <BottomNavItem
           icon={<LeaveIcon />}
