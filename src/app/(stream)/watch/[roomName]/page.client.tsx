@@ -248,6 +248,30 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
   }, [chatOpen]);
   const [pipActive, setPipActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUserActivity = useCallback(() => {
+    if (!isFullscreen) return;
+    setNavVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setNavVisible(false);
+    }, 1000);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (isFullscreen) {
+      setNavVisible(false);
+      handleUserActivity();
+    } else {
+      setNavVisible(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    }
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isFullscreen, handleUserActivity]);
 
   const togglePiP = async () => {
     try {
@@ -356,7 +380,13 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
   };
 
   return (
-    <div className="fixed inset-0 w-full overflow-hidden" style={{ height: "100dvh", background: "var(--np-background)" }}>
+    <div 
+      className="fixed inset-0 w-full overflow-hidden" 
+      style={{ height: "100dvh", background: "var(--np-background)" }}
+      onMouseMove={handleUserActivity}
+      onTouchStart={handleUserActivity}
+      onClick={handleUserActivity}
+    >
       {/* Video Area — full screen */}
       <div ref={streamAreaRef} className="w-full h-full">
         <StreamPlayer />
@@ -451,6 +481,10 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
           padding: "16px 16px 32px",
           background: "linear-gradient(to top, rgba(11, 14, 20, 0.95), transparent)",
           zIndex: 20,
+          opacity: navVisible ? 1 : 0,
+          pointerEvents: navVisible ? "auto" : "none",
+          transform: navVisible ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 0.3s ease, transform 0.3s ease",
         }}
       >
         <BottomNavItem

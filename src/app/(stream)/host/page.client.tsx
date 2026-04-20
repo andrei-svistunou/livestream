@@ -144,6 +144,31 @@ function RecordIcon({ active }: { active?: boolean }) {
   );
 }
 
+function FullscreenIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="var(--np-primary)"
+        strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+        <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+        <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+        <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
 /* ─── Bottom Navigation Bar ───────────────────────────────── */
 
 function BottomNavItem({
@@ -228,6 +253,31 @@ function HostContent({ isHost }: { isHost: boolean }) {
   const [screenSharing, setScreenSharing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isRecordingLoading, setIsRecordingLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUserActivity = useCallback(() => {
+    if (!isFullscreen) return;
+    setNavVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setNavVisible(false);
+    }, 1000);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (isFullscreen) {
+      setNavVisible(false);
+      handleUserActivity();
+    } else {
+      setNavVisible(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    }
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isFullscreen, handleUserActivity]);
   const [_, copy] = useCopyToClipboard();
   const streamAreaRef = useRef<HTMLDivElement>(null);
 
@@ -373,8 +423,84 @@ function HostContent({ isHost }: { isHost: boolean }) {
     }
   };
 
+  const toggleFullscreen = async () => {
+    try {
+      // Already in fullscreen → exit
+      if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        }
+        return;
+      }
+
+      // Try standard Fullscreen API on the page container (works on desktop + Android)
+      const container = streamAreaRef.current?.closest("[class*='fixed']") as HTMLElement | null;
+      const target = container || document.documentElement;
+
+      if (target.requestFullscreen) {
+        await target.requestFullscreen();
+        return;
+      }
+      if ((target as any).webkitRequestFullscreen) {
+        (target as any).webkitRequestFullscreen();
+        return;
+      }
+
+      // iOS Safari fallback: use webkitEnterFullscreen on the video element
+      if (streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        const video = (videos[videos.length - 1] || videos[0]) as any;
+        if (video?.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen();
+          return;
+        }
+      }
+    } catch {
+      // Fullscreen might not be supported
+    }
+  };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+
+    // iOS Safari: listen for native video fullscreen events
+    const checkVideoFs = () => {
+      if (!streamAreaRef.current) return;
+      const videos = streamAreaRef.current.querySelectorAll("video");
+      videos.forEach((video) => {
+        video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
+        video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
+      });
+    };
+
+    // Check immediately and also observe for dynamically added videos
+    checkVideoFs();
+    const observer = new MutationObserver(checkVideoFs);
+    if (streamAreaRef.current) {
+      observer.observe(streamAreaRef.current, { childList: true, subtree: true });
+    }
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 w-full overflow-hidden" style={{ height: "100dvh", background: "var(--np-background)" }}>
+    <div 
+      className="fixed inset-0 w-full overflow-hidden" 
+      style={{ height: "100dvh", background: "var(--np-background)" }}
+      onMouseMove={handleUserActivity}
+      onTouchStart={handleUserActivity}
+      onClick={handleUserActivity}
+    >
     {/* <div className="relative w-full overflow-hidden" style={{ height: "100vh", background: "var(--np-background)" }}> */}
       {/* Video Area — full screen */}
       <div ref={streamAreaRef} className="w-full h-full">
@@ -516,6 +642,10 @@ function HostContent({ isHost }: { isHost: boolean }) {
           padding: "16px 12px 32px",
           background: "linear-gradient(to top, rgba(11, 14, 20, 0.95) 0%, rgba(11, 14, 20, 0.8) 50%, transparent 100%)",
           zIndex: 20,
+          opacity: navVisible ? 1 : 0,
+          pointerEvents: navVisible ? "auto" : "none",
+          transform: navVisible ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 0.3s ease, transform 0.3s ease",
         }}
       >
         <BottomNavItem
@@ -551,8 +681,14 @@ function HostContent({ isHost }: { isHost: boolean }) {
           danger={isRecording}
         />
         <BottomNavItem
+          icon={<FullscreenIcon active={isFullscreen} />}
+          label={isFullscreen ? "Exit Full" : "Fullwidth"}
+          onClick={toggleFullscreen}
+          active={isFullscreen}
+        />
+        <BottomNavItem
           icon={<UsersIcon />}
-          label={roomState === ConnectionState.Connected ? `${participants.length}` : "Viewers"}
+          label={roomState === ConnectionState.Connected ? `${participants.length}` : "1"}
           onClick={() => { setViewersOpen(true); setChatOpen(false); setCameraOpen(false); }}
           active={viewersOpen}
           badge={participants.some((p) => {
