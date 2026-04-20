@@ -256,13 +256,13 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
     setNavVisible(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
-      setNavVisible(false);
+      setNavVisible(true);
     }, 1000);
   }, [isFullscreen]);
 
   useEffect(() => {
     if (isFullscreen) {
-      setNavVisible(false);
+      setNavVisible(true);
       handleUserActivity();
     } else {
       setNavVisible(true);
