@@ -326,7 +326,6 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
         const videos = streamAreaRef.current.querySelectorAll("video");
         const video = (videos[videos.length - 1] || videos[0]) as any;
         if (video?.webkitEnterFullscreen) {
-          video.controls = false;
           video.webkitEnterFullscreen();
           return;
         }
@@ -344,26 +343,26 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
     document.addEventListener("webkitfullscreenchange", onFsChange);
 
     // iOS Safari: listen for native video fullscreen events
-    // const checkVideoFs = () => {
-    //   if (!streamAreaRef.current) return;
-    //   const videos = streamAreaRef.current.querySelectorAll("video");
-    //   videos.forEach((video) => {
-    //     video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
-    //     video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
-    //   });
-    // };
+    const checkVideoFs = () => {
+      if (!streamAreaRef.current) return;
+      const videos = streamAreaRef.current.querySelectorAll("video");
+      videos.forEach((video) => {
+        video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
+        video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
+      });
+    };
 
     // Check immediately and also observe for dynamically added videos
-    // checkVideoFs();
-    // const observer = new MutationObserver(checkVideoFs);
-    // if (streamAreaRef.current) {
-    //   observer.observe(streamAreaRef.current, { childList: true, subtree: true });
-    // }
+    checkVideoFs();
+    const observer = new MutationObserver(checkVideoFs);
+    if (streamAreaRef.current) {
+      observer.observe(streamAreaRef.current, { childList: true, subtree: true });
+    }
 
     return () => {
       document.removeEventListener("fullscreenchange", onFsChange);
       document.removeEventListener("webkitfullscreenchange", onFsChange);
-      // observer.disconnect();
+      observer.disconnect();
     };
   }, []);
   const handleOpenChat = () => {
