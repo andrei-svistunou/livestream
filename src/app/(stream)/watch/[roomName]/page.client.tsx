@@ -298,7 +298,7 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
 
   const toggleFullscreen = async () => {
     try {
-      // Already in fullscreen → exit
+      // Already in native fullscreen → exit
       if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
@@ -308,63 +308,52 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
         return;
       }
 
+      // Already in pseudo fullscreen → exit
+      if (isFullscreen) {
+        setIsFullscreen(false);
+        return;
+      }
+
       // Try standard Fullscreen API on the page container (works on desktop + Android)
       const container = streamAreaRef.current?.closest("[class*='fixed']") as HTMLElement | null;
       const target = container || document.documentElement;
 
       if (target.requestFullscreen) {
-        await target.requestFullscreen();
-        return;
-      }
-      if ((target as any).webkitRequestFullscreen) {
+        try {
+          await target.requestFullscreen();
+        } catch (err) {
+           console.warn("requestFullscreen failed", err);
+        }
+      } else if ((target as any).webkitRequestFullscreen) {
         (target as any).webkitRequestFullscreen();
-        return;
       }
 
-      // iOS Safari fallback: use webkitEnterFullscreen on the video element
-      if (streamAreaRef.current) {
-        const videos = streamAreaRef.current.querySelectorAll("video");
-        const video = (videos[videos.length - 1] || videos[0]) as any;
-        if (video?.webkitEnterFullscreen) {
-          video.webkitEnterFullscreen();
-          return;
-        }
-      }
+      // Fallback: always set pseudo-fullscreen mode.
+      // If native fullscreen succeeds, the event listener will just confirm this state.
+      // If native fullscreen silently fails (like on iOS Safari), this ensures our custom UI reacts.
+      setIsFullscreen(true);
     } catch {
-      // Fullscreen might not be supported
+      setIsFullscreen(true);
     }
   };
 
   useEffect(() => {
     const onFsChange = () => {
-      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+      const isNativeFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      if (isNativeFs) {
+        setIsFullscreen(true);
+      } else if (isFullscreen) {
+        setIsFullscreen(false);
+      }
     };
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
 
-    // iOS Safari: listen for native video fullscreen events
-    const checkVideoFs = () => {
-      if (!streamAreaRef.current) return;
-      const videos = streamAreaRef.current.querySelectorAll("video");
-      videos.forEach((video) => {
-        video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
-        video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
-      });
-    };
-
-    // Check immediately and also observe for dynamically added videos
-    checkVideoFs();
-    const observer = new MutationObserver(checkVideoFs);
-    if (streamAreaRef.current) {
-      observer.observe(streamAreaRef.current, { childList: true, subtree: true });
-    }
-
     return () => {
       document.removeEventListener("fullscreenchange", onFsChange);
       document.removeEventListener("webkitfullscreenchange", onFsChange);
-      observer.disconnect();
     };
-  }, []);
+  }, [isFullscreen]);
   const handleOpenChat = () => {
     if (chatOpen) {
       setChatOpen(false);
@@ -387,6 +376,7 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       onTouchStart={handleUserActivity}
       onClick={handleUserActivity}
     >
+      <style dangerouslySetInnerHTML={{__html: isFullscreen ? `video { object-fit: cover !important; }` : ''}} />
       {/* Video Area — full screen */}
       <div ref={streamAreaRef} className="w-full h-full">
         <StreamPlayer />
