@@ -134,6 +134,16 @@ function CloseIcon() {
   );
 }
 
+function RecordIcon({ active }: { active?: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "#FF4444" : "none"}
+      stroke={active ? "#FF4444" : "currentColor"}
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  );
+}
+
 /* ─── Bottom Navigation Bar ───────────────────────────────── */
 
 function BottomNavItem({
@@ -216,6 +226,8 @@ function HostContent({ isHost }: { isHost: boolean }) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [pipActive, setPipActive] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingLoading, setIsRecordingLoading] = useState(false);
   const [_, copy] = useCopyToClipboard();
   const streamAreaRef = useRef<HTMLDivElement>(null);
 
@@ -284,6 +296,40 @@ function HostContent({ isHost }: { isHost: boolean }) {
     } catch {
       // User cancelled the screen share picker or error occurred
       setScreenSharing(false);
+    }
+  };
+
+  const toggleRecording = async () => {
+    if (isRecordingLoading) return;
+    setIsRecordingLoading(true);
+    try {
+      if (isRecording) {
+        const res = await fetch("/api/stop_recording", {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${(window as any).__authToken || ""}`,
+          },
+        });
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        setIsRecording(false);
+      } else {
+        const res = await fetch("/api/start_recording", {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${(window as any).__authToken || ""}`,
+          },
+        });
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        setIsRecording(true);
+      }
+    } catch (err) {
+      console.error("Failed to toggle recording", err);
+    } finally {
+      setIsRecordingLoading(false);
     }
   };
 
@@ -496,6 +542,13 @@ function HostContent({ isHost }: { isHost: boolean }) {
           label="Screen"
           onClick={toggleScreenShare}
           active={screenSharing}
+        />
+        <BottomNavItem
+          icon={<RecordIcon active={isRecording} />}
+          label="Record"
+          onClick={toggleRecording}
+          active={isRecording}
+          danger={isRecording}
         />
         <BottomNavItem
           icon={<UsersIcon />}

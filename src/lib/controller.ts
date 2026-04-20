@@ -12,6 +12,9 @@ import {
   ParticipantInfo,
   ParticipantPermission,
   RoomServiceClient,
+  EgressClient,
+  EncodedFileOutput,
+  EncodedFileType,
 } from "livekit-server-sdk";
 import { TrackSource } from "livekit-server-sdk/dist/proto/livekit_models";
 
@@ -106,6 +109,7 @@ export function getSessionFromReq(req: Request): Session {
 export class Controller {
   private ingressService: IngressClient;
   private roomService: RoomServiceClient;
+  private egressService: EgressClient;
 
   constructor() {
     const httpUrl = process.env
@@ -113,6 +117,11 @@ export class Controller {
       .replace("ws://", "http://");
     this.ingressService = new IngressClient(httpUrl);
     this.roomService = new RoomServiceClient(
+      httpUrl,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!,
+    );
+    this.egressService = new EgressClient(
       httpUrl,
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!,
@@ -434,6 +443,50 @@ export class Controller {
       JSON.stringify(metadata),
       permission,
     );
+  }
+
+  async startRecording(session: Session) {
+    const s3AccessKey = process.env.S3_ACCESS_KEY;
+    const s3Secret = process.env.S3_SECRET;
+    const s3Bucket = process.env.S3_BUCKET;
+    const s3Region = process.env.S3_REGION;
+
+    let file: EncodedFileOutput = {
+      fileType: EncodedFileType.MP4,
+      filepath: `${session.room_name}-{time}.mp4`,
+    };
+
+    if (s3AccessKey && s3Secret && s3Bucket) {
+      file.s3 = {
+        accessKey: s3AccessKey,
+        secret: s3Secret,
+        bucket: s3Bucket,
+        region: s3Region,
+        forcePathStyle: true,
+      };
+      await this.egressService.startRoomCompositeEgress(
+        session.room_name,
+        file,
+        {
+          layout: "single-speaker",
+        }
+      );
+    } else {
+      console.log("No S3 credentials found, using local storage");   
+    }
+  }
+
+  async stopRecording(session: Session) {
+    const activeEgresses = await this.egressService.listEgress({
+      roomName: session.room_name,
+      active: true,
+    });
+
+    for (const egress of activeEgresses) {
+      if (egress.egressId) {
+        await this.egressService.stopEgress(egress.egressId);
+      }
+    }
   }
 
   getOrCreateParticipantMetadata(
