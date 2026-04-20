@@ -337,7 +337,17 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onFsChange = () => {
-      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+      const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFs);
+
+      if (!isFs && streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        videos.forEach((v) => {
+          v.play().catch(() => {
+            // autoplay restrictions may block this
+          });
+        });
+      }
     };
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -348,7 +358,10 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       const videos = streamAreaRef.current.querySelectorAll("video");
       videos.forEach((video) => {
         video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
-        video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
+        video.addEventListener("webkitendfullscreen", () => {
+          setIsFullscreen(false);
+          video.play().catch(() => {});
+        });
       });
     };
 
