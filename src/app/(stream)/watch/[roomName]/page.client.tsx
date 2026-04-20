@@ -282,7 +282,6 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
         const videos = streamAreaRef.current.querySelectorAll("video");
         const video = videos[videos.length - 1] || videos[0];
         if (video && document.pictureInPictureEnabled) {
-          video.controls = false;
           await video.requestPictureInPicture();
           setPipActive(true);
           video.addEventListener(
@@ -323,14 +322,15 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
       }
 
       // iOS Safari fallback: use webkitEnterFullscreen on the video element
-      // if (streamAreaRef.current) {
-      //   const videos = streamAreaRef.current.querySelectorAll("video");
-      //   const video = (videos[videos.length - 1] || videos[0]) as any;
-      //   if (video?.webkitEnterFullscreen) {
-      //     video.webkitEnterFullscreen();
-      //     return;
-      //   }
-      // }
+      if (streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        const video = (videos[videos.length - 1] || videos[0]) as any;
+        if (video?.webkitEnterFullscreen) {
+          video.controls = false;
+          video.webkitEnterFullscreen();
+          return;
+        }
+      }
     } catch {
       // Fullscreen might not be supported
     }
