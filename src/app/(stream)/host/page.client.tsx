@@ -248,7 +248,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
   const [viewersOpen, setViewersOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const [pipActive, setPipActive] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -325,11 +325,29 @@ function HostContent({ isHost }: { isHost: boolean }) {
     }
   };
 
-  const copyLink = () => {
+  const [toastMessage, setToastMessage] = useState("");
+
+  const copyLink = async () => {
     if (roomName) {
-      copy(`${window.location.origin}/watch/${roomName}`);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
+      const link = `${window.location.origin}/watch/${roomName}`;
+      
+      try {
+        const res = await fetch("/api/share_telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ link, roomName }),
+        });
+        if (res.ok) {
+          setToastMessage("Link sent to Telegram!");
+        } else {
+          setToastMessage("Failed to send link to Telegram!");
+        }
+      } catch {
+        setToastMessage("Failed to send link to Telegram!");
+      }
+
+      setLinkSent(true);
+      setTimeout(() => setLinkSent(false), 3000);
     }
   };
 
@@ -549,7 +567,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
       )}
 
       {/* Link copied toast */}
-      {linkCopied && (
+      {linkSent && (
         <div
           style={{
             position: "absolute",
@@ -568,7 +586,7 @@ function HostContent({ isHost }: { isHost: boolean }) {
             backdropFilter: "blur(12px)",
           }}
         >
-          Link copied!
+          {toastMessage}
         </div>
       )}
 
