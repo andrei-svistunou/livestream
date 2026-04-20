@@ -443,19 +443,13 @@ function HostContent({ isHost }: { isHost: boolean }) {
 
   const toggleFullscreen = async () => {
     try {
-      // Already in native fullscreen → exit
+      // Already in fullscreen → exit
       if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
         } else if ((document as any).webkitExitFullscreen) {
           (document as any).webkitExitFullscreen();
         }
-        return;
-      }
-
-      // Already in pseudo fullscreen → exit
-      if (isFullscreen) {
-        setIsFullscreen(false);
         return;
       }
 
@@ -472,31 +466,50 @@ function HostContent({ isHost }: { isHost: boolean }) {
         return;
       }
 
-      // Fallback: manually toggle pseudo-fullscreen mode for iOS Safari 
-      // without using the native player controls
-      setIsFullscreen(true);
+      // iOS Safari fallback: use webkitEnterFullscreen on the video element
+      if (streamAreaRef.current) {
+        const videos = streamAreaRef.current.querySelectorAll("video");
+        const video = (videos[videos.length - 1] || videos[0]) as any;
+        if (video?.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen();
+          return;
+        }
+      }
     } catch {
-      setIsFullscreen(true);
+      // Fullscreen might not be supported
     }
   };
 
   useEffect(() => {
     const onFsChange = () => {
-      const isNativeFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-      if (isNativeFs) {
-        setIsFullscreen(true);
-      } else if (isFullscreen) {
-        setIsFullscreen(false);
-      }
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
     };
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
 
+    // iOS Safari: listen for native video fullscreen events
+    const checkVideoFs = () => {
+      if (!streamAreaRef.current) return;
+      const videos = streamAreaRef.current.querySelectorAll("video");
+      videos.forEach((video) => {
+        video.addEventListener("webkitbeginfullscreen", () => setIsFullscreen(true));
+        video.addEventListener("webkitendfullscreen", () => setIsFullscreen(false));
+      });
+    };
+
+    // Check immediately and also observe for dynamically added videos
+    checkVideoFs();
+    const observer = new MutationObserver(checkVideoFs);
+    if (streamAreaRef.current) {
+      observer.observe(streamAreaRef.current, { childList: true, subtree: true });
+    }
+
     return () => {
       document.removeEventListener("fullscreenchange", onFsChange);
       document.removeEventListener("webkitfullscreenchange", onFsChange);
+      observer.disconnect();
     };
-  }, [isFullscreen]);
+  }, []);
 
   return (
     <div 
