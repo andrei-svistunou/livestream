@@ -256,13 +256,13 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
     setNavVisible(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
-      setNavVisible(true);
+      setNavVisible(false);
     }, 1000);
   }, [isFullscreen]);
 
   useEffect(() => {
     if (isFullscreen) {
-      setNavVisible(true);
+      setNavVisible(false);
       handleUserActivity();
     } else {
       setNavVisible(true);
@@ -383,8 +383,8 @@ const streamAreaRef = useRef<HTMLDivElement>(null);
     <div 
       className="fixed inset-0 w-full overflow-hidden" 
       style={{ height: "100dvh", background: "var(--np-background)" }}
-      onMouseMove={handleUserActivity}
-      onTouchStart={handleUserActivity}
+      // onMouseMove={handleUserActivity}
+      // onTouchStart={handleUserActivity}
       onClick={handleUserActivity}
     >
       {/* Video Area — full screen */}
