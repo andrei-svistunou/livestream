@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const {  roomName } = await req.json();
-const link ="https://livestream-delta-nine.vercel.app/watch/2"
+    const { link, roomName } = await req.json();
     if (!link) {
       return NextResponse.json({ error: "Link is required" }, { status: 400 });
     }
